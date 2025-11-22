@@ -35,11 +35,12 @@ After running this Terraform, you will have:
     - Backend Subnet: routes all `0.0.0.0/0` to NAT Gateway (IPv4) and `::/0` to LPG (IPv6)
     - LPG ingress: routes all `::/0` traffic from VCN1 (arriving via LPG) to the NLB's private IPv6 ULA address
 
+### Security Rules
+- **Update and change SL/NSGs for all VCNs/subnets as per your needs.**
+
 ### LPG Peering
 - **LPGs in each VCN are peered** (supporting intra-region, cross-VCN traffic)
 
-###
-- Update and change SL/NSGs for VCNs/subnets as per your needs.
 
 
 ### Output

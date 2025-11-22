@@ -89,12 +89,12 @@ resource "oci_core_route_table" "backend_subnet_rt" {
     network_entity_id = oci_core_local_peering_gateway.proxy_lpg.id
   }
 
-  route_rules { ## Response to Health check query 
+  route_rules { # # To route backend's response to Health check query coming from NLB
     destination       = "fd00:20:0:100::100/128" # NLB IPv6 private IP
     destination_type  = "CIDR_BLOCK"
     network_entity_id = data.oci_core_ipv6s.nlb_private_ipv6.ipv6s[0].id
   }
-    route_rules { ## Response to Health check query 
+    route_rules { # # To route backend's response to Health check query coming from NLB, not used in this setup 
     destination       = "10.1.1.25/32" # NLB IPv4 private IP
     destination_type  = "CIDR_BLOCK"
     network_entity_id = data.oci_core_private_ips.nlb_private_ipv4.private_ips[0].id

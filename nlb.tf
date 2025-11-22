@@ -18,9 +18,9 @@ resource "oci_network_load_balancer_listener" "listener" {
   ip_version               = "IPV6"
   port                     = 0
 
-  ##l3ip_idle_timeout = 1800
-  #tcp_idle_timeout  = 1800
-  #udp_idle_timeout  = 1800
+  # # l3ip_idle_timeout = 1800
+  # # tcp_idle_timeout  = 1800
+  # # udp_idle_timeout  = 1800
 }
 
 resource "oci_network_load_balancer_backend_set" "nlb-bes-nat64" {
@@ -29,7 +29,7 @@ resource "oci_network_load_balancer_backend_set" "nlb-bes-nat64" {
   policy                                = "FIVE_TUPLE"
   is_instant_failover_enabled           = true
   is_instant_failover_tcp_reset_enabled = true
-  is_preserve_source                    = true ## Preserve source IP for backend instances
+  is_preserve_source                    = true # # Preserve source IP for backend instances
   ip_version = "IPV6"
 
   health_checker { #change as needed
