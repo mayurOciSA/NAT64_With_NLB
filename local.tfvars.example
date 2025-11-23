@@ -5,13 +5,13 @@ oci_region                = "us-ashburn-1"
 user_ocid        = "ocid1.user.oc1.."
 fingerprint      = "11:26:47:99:........"
 private_key_path = "/Users/mraleras/.oci/oci_api_key.pem"
-backend_count = 1
+backend_count    = 1
 
 # ssh_public_key and ssh_private_key_local_path are public and private keys from the same/one pair
 # ssh_public_key is string format of the public key
 # ssh_private_key_local_path is the path to the private key file, on your system/devbox
 
-ssh_public_key             = "ssh-rsa AAAAB3NzaC1yc2E..... ssh-key-2024-06-19"
+ssh_public_key   = "ssh-rsa AAAAB3NzaC1yc2E..... ssh-key-2024-06-19"
 
-#unused in the setup, but provided for ansible access to backend instances if needed, give any placeholder value for now
+# unused in the setup, but provided for ansible access to backend instances if needed, give any placeholder value for now
 ssh_private_key_local_path = "/Users/mraleras/.ssh/id_rsa"

@@ -15,6 +15,7 @@ resource "oci_core_instance" "nat64_backend" {
     assign_private_dns_record = true
     hostname_label            = "nbk${count.index}"
     assign_ipv6ip             = true
+    skip_source_dest_check    = true # Needed for NAT64 functionality, as instance will route/forward traffic 
   }
 
   shape_config {

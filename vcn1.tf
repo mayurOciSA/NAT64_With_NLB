@@ -2,11 +2,11 @@
 # VCN1 is example client VCN, you will have your own, most probably created already
 # VCN1 will be single stack in your case (IPv6 only)
 resource "oci_core_vcn" "vcn1" {
-  compartment_id          = var.compartment_ocid
-  display_name            = "VCN1"
-  cidr_block              = "10.0.0.0/16" # required, but will not be used
-  ipv6private_cidr_blocks = ["fd00:10:0::/48"]
-  is_ipv6enabled = true
+  compartment_id                   = var.compartment_ocid
+  display_name                     = "VCN1"
+  cidr_block                       = "10.0.0.0/16" # required, but will not be used
+  ipv6private_cidr_blocks          = ["fd00:10:0::/48"]
+  is_ipv6enabled                   = true
   is_oracle_gua_allocation_enabled = false
 }
 
@@ -24,7 +24,7 @@ resource "oci_core_subnet" "vcn1_private_ipv6" {
   display_name               = "vcn1-private-subnet-ipv6"
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.vcn1_ipv6_rt.id
-  security_list_ids = [oci_core_default_security_list.def_security_list_vcn1.id]
+  security_list_ids          = [oci_core_default_security_list.def_security_list_vcn1.id]
 }
 
 # VCN1 IPv6-only subnet RT: ::/0 via LPG

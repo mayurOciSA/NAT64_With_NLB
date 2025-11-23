@@ -1,13 +1,13 @@
 # Proxy VCN and LPG
 
 resource "oci_core_vcn" "proxy_vcn" {
-  compartment_id          = var.compartment_ocid
-  display_name            = "Proxy-VCN"
-  cidr_block              = "10.1.0.0/16"
-  ipv6private_cidr_blocks = ["fd00:20:0::/48"]
-  is_ipv6enabled = true
+  compartment_id                   = var.compartment_ocid
+  display_name                     = "Proxy-VCN"
+  cidr_block                       = "10.1.0.0/16"
+  ipv6private_cidr_blocks          = ["fd00:20:0::/48"]
+  is_ipv6enabled                   = true
   is_oracle_gua_allocation_enabled = false
-  dns_label = "pvcn"
+  dns_label                        = "pvcn"
 }
 
 resource "oci_core_local_peering_gateway" "proxy_lpg" {
@@ -24,11 +24,11 @@ resource "oci_core_route_table" "proxy_lpg_ingress_rt" {
   vcn_id         = oci_core_vcn.proxy_vcn.id
   display_name   = "proxy-vcn-lpg-ingress-rt"
   route_rules {
-      destination      = "::/0"
-      destination_type = "CIDR_BLOCK"
-      network_entity_id = data.oci_core_ipv6s.nlb_private_ipv6.ipv6s[0].id
+    destination       = "::/0"
+    destination_type  = "CIDR_BLOCK"
+    network_entity_id = data.oci_core_ipv6s.nlb_private_ipv6.ipv6s[0].id
   }
-  depends_on = [ oci_network_load_balancer_network_load_balancer.nlb ]
+  depends_on = [oci_network_load_balancer_network_load_balancer.nlb]
 }
 
 # 1. NLB Subnet
@@ -40,8 +40,8 @@ resource "oci_core_subnet" "nlb_subnet" {
   display_name               = "proxy-nlb-subnet"
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.nlb_subnet_rt.id
-  security_list_ids = [oci_core_default_security_list.def_security_list_pv.id]
-  dns_label = "nlbsb"
+  security_list_ids          = [oci_core_default_security_list.def_security_list_pv.id]
+  dns_label                  = "nlbsb"
 }
 # 2. Backend Subnet
 resource "oci_core_subnet" "backend_subnet" {
@@ -52,8 +52,8 @@ resource "oci_core_subnet" "backend_subnet" {
   display_name               = "proxy-backend-subnet"
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.backend_subnet_rt.id
-  security_list_ids = [oci_core_default_security_list.def_security_list_pv.id]
-  dns_label = "backendsb"
+  security_list_ids          = [oci_core_default_security_list.def_security_list_pv.id]
+  dns_label                  = "backendsb"
 }
 
 # NAT Gateway for Proxy VCN
@@ -112,7 +112,7 @@ resource "oci_core_default_security_list" "def_security_list_pv" {
     protocol = "all"
     source   = "fd00:10:0::/48" # VCN1 IPv6 CIDR
   }
-    ingress_security_rules {
+  ingress_security_rules {
     protocol = "all"
     source   = "10.1.0.0/16" # Proxy VCN IPv4 CIDR
   }

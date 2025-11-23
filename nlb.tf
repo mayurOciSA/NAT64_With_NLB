@@ -6,8 +6,8 @@ resource "oci_network_load_balancer_network_load_balancer" "nlb" {
   is_preserve_source_destination = true
   is_symmetric_hash_enabled      = true
   nlb_ip_version                 = "IPV4_AND_IPV6"
-  assigned_ipv6                  =  "fd00:20:0:100::100"
-  assigned_private_ipv4 = "10.1.1.25"
+  assigned_ipv6                  = "fd00:20:0:100::100"
+  assigned_private_ipv4          = "10.1.1.25"
 }
 
 resource "oci_network_load_balancer_listener" "listener" {
@@ -30,7 +30,7 @@ resource "oci_network_load_balancer_backend_set" "nlb-bes-nat64" {
   is_instant_failover_enabled           = true
   is_instant_failover_tcp_reset_enabled = true
   is_preserve_source                    = true # # Preserve source IP for backend instances
-  ip_version = "IPV6"
+  ip_version                            = "IPV6"
 
   health_checker { #change as needed
     port               = "22"
@@ -60,13 +60,13 @@ data "oci_network_load_balancer_network_load_balancer" "nlb" {
 
 
 data "oci_core_private_ips" "nlb_private_ipv4" {
-    ip_address = "10.1.1.25"
-    subnet_id = oci_core_subnet.nlb_subnet.id
-    depends_on = [ data.oci_network_load_balancer_network_load_balancer.nlb ]
+  ip_address = "10.1.1.25"
+  subnet_id  = oci_core_subnet.nlb_subnet.id
+  depends_on = [data.oci_network_load_balancer_network_load_balancer.nlb]
 }
 
 data "oci_core_ipv6s" "nlb_private_ipv6" {
-    ip_address = "fd00:20:0:100::100"
-    subnet_id = oci_core_subnet.nlb_subnet.id
-    depends_on = [ data.oci_network_load_balancer_network_load_balancer.nlb ]
+  ip_address = "fd00:20:0:100::100"
+  subnet_id  = oci_core_subnet.nlb_subnet.id
+  depends_on = [data.oci_network_load_balancer_network_load_balancer.nlb]
 }
