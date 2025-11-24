@@ -5,3 +5,7 @@ local.tfvars
 .terraform.lock.hcl
 crash.log
 .git 
+tayga/prompt.txt
+ipv4to6.sh
+tayga/tayga.install.sh
+tayga/ansible.yml

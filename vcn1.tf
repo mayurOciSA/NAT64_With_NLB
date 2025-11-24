@@ -8,6 +8,7 @@ resource "oci_core_vcn" "vcn1" {
   ipv6private_cidr_blocks          = ["fd00:10:0::/48"]
   is_ipv6enabled                   = true
   is_oracle_gua_allocation_enabled = false
+  dns_label                        = "vcn1"
 }
 
 resource "oci_core_local_peering_gateway" "vcn1_lpg" {
@@ -25,6 +26,7 @@ resource "oci_core_subnet" "vcn1_private_ipv6" {
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.vcn1_ipv6_rt.id
   security_list_ids          = [oci_core_default_security_list.def_security_list_vcn1.id]
+  dns_label                  = "ulasub"
 }
 
 # VCN1 IPv6-only subnet RT: ::/0 via LPG
