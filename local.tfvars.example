@@ -7,6 +7,13 @@ fingerprint      = "11:26:47:99:........"
 private_key_path = "/Users/mraleras/.oci/oci_api_key.pem"
 backend_count    = 1
 
+proxy_vcn_ipv4_cidr    = "10.1.0.0/16"
+proxy_vcn_ipv6_cidr    = "fd00:20:0::/48"
+nlb_subnet_ipv4_cidr   = "10.1.1.0/24"
+nlb_subnet_ipv6_cidr   = "fd00:20:0:100::/64"
+backend_subnet_ipv4_cidr = "10.1.2.0/24"
+backend_subnet_ipv6_cidr = "fd00:20:0:200::/64"
+
 # ssh_public_key and ssh_private_key_local_path are public and private keys from the same/one pair
 # ssh_public_key is string format of the public key
 # ssh_private_key_local_path is the path to the private key file, on your system/devbox
