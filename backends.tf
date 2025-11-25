@@ -49,3 +49,16 @@ output "backends_ipv4" {
   depends_on = [ oci_core_instance.nat64_backend ]
 }
 
+data "oci_core_private_ips" "backend_private_ipv4_objects" {
+  subnet_id  = oci_core_subnet.backend_subnet.id
+  depends_on = [ oci_core_instance.nat64_backend ]
+}
+
+data "oci_core_ipv6s" "backend_private_ipv6_objects" {
+  subnet_id  = oci_core_subnet.backend_subnet.id
+  depends_on = [ oci_core_instance.nat64_backend ]
+}
+
+locals {
+  backends_ipv6_ocids = [for ipv6_object in data.oci_core_ipv6s.backend_private_ipv6_objects.ipv6s : ipv6_object.id]
+}
