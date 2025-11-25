@@ -1,10 +1,34 @@
 # Proxy VCN and LPG
 
+variable "proxy_vcn_ipv4_cidr" {
+  description = "The IPv4 CIDR block for the Proxy VCN."
+}
+
+variable "proxy_vcn_ipv6_cidr" {
+  description = "The IPv6 CIDR block for the Proxy VCN."
+}
+
+variable "nlb_subnet_ipv4_cidr" {
+  description = "The IPv4 CIDR block for the NLB subnet."
+}
+
+variable "nlb_subnet_ipv6_cidr" {
+  description = "The IPv6 CIDR block for the NLB subnet."
+}
+
+variable "backend_subnet_ipv4_cidr" {
+  description = "The IPv4 CIDR block for the backend subnet."
+}
+
+variable "backend_subnet_ipv6_cidr" {
+  description = "The IPv6 CIDR block for the backend subnet."
+}
+
 resource "oci_core_vcn" "proxy_vcn" {
   compartment_id                   = var.compartment_ocid
   display_name                     = "Proxy-VCN"
-  cidr_block                       = "10.1.0.0/16"
-  ipv6private_cidr_blocks          = ["fd00:20:0::/48"]
+  cidr_block                       = var.proxy_vcn_ipv4_cidr
+  ipv6private_cidr_blocks          = [var.proxy_vcn_ipv6_cidr]
   is_ipv6enabled                   = true
   is_oracle_gua_allocation_enabled = false
   dns_label                        = "pvcn"
@@ -35,8 +59,8 @@ resource "oci_core_route_table" "proxy_lpg_ingress_rt" {
 resource "oci_core_subnet" "nlb_subnet" {
   compartment_id             = var.compartment_ocid
   vcn_id                     = oci_core_vcn.proxy_vcn.id
-  cidr_block                 = "10.1.1.0/24"
-  ipv6cidr_block             = "fd00:20:0:100::/64"
+  cidr_block                 = var.nlb_subnet_ipv4_cidr
+  ipv6cidr_block             = var.nlb_subnet_ipv6_cidr
   display_name               = "proxy-nlb-subnet"
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.nlb_subnet_rt.id
@@ -47,8 +71,8 @@ resource "oci_core_subnet" "nlb_subnet" {
 resource "oci_core_subnet" "backend_subnet" {
   compartment_id             = var.compartment_ocid
   vcn_id                     = oci_core_vcn.proxy_vcn.id
-  cidr_block                 = "10.1.2.0/24"
-  ipv6cidr_block             = "fd00:20:0:200::/64"
+  cidr_block                 = var.backend_subnet_ipv4_cidr
+  ipv6cidr_block             = var.backend_subnet_ipv6_cidr
   display_name               = "proxy-backend-subnet"
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.backend_subnet_rt.id
@@ -106,19 +130,20 @@ resource "oci_core_default_security_list" "def_security_list_pv" {
 
   ingress_security_rules {
     protocol = "all"
-    source   = "10.0.0.0/16" # VCN1 IPv4 CIDR
+    source   = var.vcn1_ipv4_cidr
   }
   ingress_security_rules {
     protocol = "all"
-    source   = "fd00:10:0::/48" # VCN1 IPv6 CIDR
+    source   = var.vcn1_ipv6_cidr
+  }
+  #Self
+  ingress_security_rules {
+    protocol = "all"
+    source   = var.proxy_vcn_ipv4_cidr 
   }
   ingress_security_rules {
     protocol = "all"
-    source   = "10.1.0.0/16" # Proxy VCN IPv4 CIDR
-  }
-  ingress_security_rules {
-    protocol = "all"
-    source   = "fd00:20:0::/48" # Proxy VCN IPv6 CIDR
+    source   = var.proxy_vcn_ipv6_cidr
   }
 }
 

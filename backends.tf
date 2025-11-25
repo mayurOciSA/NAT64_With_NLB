@@ -29,7 +29,6 @@ resource "oci_core_instance" "nat64_backend" {
   }
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
-    user_data          = base64encode(file("${path.module}/tayga/cloud-init.yaml"))
   }
 }
 
@@ -44,8 +43,20 @@ data "oci_core_vnic" "be_pvnic" {
   vnic_id = data.oci_core_vnic_attachments.be_pvnic_att[count.index].vnic_attachments[0].vnic_id
 }
 
-output "backends_ipv4" {
-  value= [for backend in oci_core_instance.nat64_backend : backend.create_vnic_details[0].private_ip]
-  depends_on = [ oci_core_instance.nat64_backend ]
+data "oci_core_private_ips" "backend_private_ipv4" {
+  subnet_id  = oci_core_subnet.backend_subnet.id
+  depends_on = [oci_core_instance.nat64_backend]
 }
 
+data "oci_core_ipv6s" "backend_private_ipv6" {
+  subnet_id  = oci_core_subnet.backend_subnet.id
+  depends_on = [oci_core_instance.nat64_backend]
+}
+
+output "backend_private_ipv6s" {
+  value = data.oci_core_ipv6s.backend_private_ipv6.ipv6s[*].ip_address
+}
+
+output "backend_private_ipv4s" {
+  value = data.oci_core_private_ips.backend_private_ipv4.private_ips[*].ip_address
+}
