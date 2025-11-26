@@ -224,10 +224,10 @@ write_files:
       # tcpdump -i nat64 -n -vv -c 10 'icmp6 or icmp'
       dnf install -y nc conntrack-tools wireshark-cli
 
-      echo "Starting tcpdump in background to capture all traffic for 3 hours to /home/opc/traffic_capture.pcap rotationally to sigle file"
-      setsid nohup tcpdump -i any -s 0 -w /home/opc/traffic_capture.pcap -v -v -v -tttt -G 10800 -W 1 2>&1 &
+      echo "Starting tcpdump in background to capture all traffic for 3 hours to /tmp/traffic_capture.pcap rotationally to sigle file"
+      setsid nohup tcpdump -i any -s 0 -w /tmp/traffic_capture.pcap -v -v -v -tttt -G 10800 -W 1 2>&1 &
       echo "Use one of below on node to see capture"
-      echo "tcpdump -vvv -tttt -ttt -r /home/opc/traffic_capture.pcap -A -l"
+      echo "tcpdump -vvv -tttt -ttt -r /tmp/traffic_capture.pcap -A -l"
       echo "tshark -r /home/opc/traffic_capture.pcap -T text -V -l"
 
       echo "[SCRIPT COMPLETE]"
