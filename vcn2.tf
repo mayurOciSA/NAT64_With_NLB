@@ -2,11 +2,35 @@
 # vcn2 is example client VCN, you will have your own, most probably created already
 # vcn2 will be single stack in your case (IPv6 only)
 
+variable "vcn2_cidr_block" {
+  description = "IPv4 CIDR for VCN2. Required by OCI but not used in single-stack IPv6 setup."
+  type        = string
+  default     = "10.1.0.0/16"
+}
+
+variable "vcn2_ipv6_cidr_block" {
+  description = "IPv6 CIDR for VCN2"
+  type        = string
+  default     = "fd00:20:0::/48"
+}
+
+variable "vcn2_subnet_cidr_block" {
+  description = "IPv4 CIDR for the VCN2 subnet. Required by OCI but not used."
+  type        = string
+  default     = "10.1.1.0/24"
+}
+
+variable "vcn2_subnet_ipv6_cidr_block" {
+  description = "IPv6 CIDR for the VCN2 subnet"
+  type        = string
+  default     = "fd00:20:0:1::/64"
+}
+
 resource "oci_core_vcn" "vcn2" {
   compartment_id                   = var.compartment_ocid
   display_name                     = "vcn2"
-  cidr_block                       = "10.1.0.0/16" # required, but will not be used
-  ipv6private_cidr_blocks          = ["fd00:20:0::/48"]
+  cidr_block                       = var.vcn2_cidr_block       # required, but will not be used
+  ipv6private_cidr_blocks          = [var.vcn2_ipv6_cidr_block]
   is_ipv6enabled                   = true
   is_oracle_gua_allocation_enabled = false
   dns_label                        = "vcn2"
@@ -15,8 +39,8 @@ resource "oci_core_vcn" "vcn2" {
 resource "oci_core_subnet" "vcn2_private_ipv6" {
   compartment_id             = var.compartment_ocid
   vcn_id                     = oci_core_vcn.vcn2.id
-  cidr_block                 = "10.1.1.0/24" # required, but will not be used
-  ipv6cidr_block             = "fd00:20:0:1::/64"
+  cidr_block                 = var.vcn2_subnet_cidr_block # required, but will not be used
+  ipv6cidr_block             = var.vcn2_subnet_ipv6_cidr_block
   display_name               = "vcn2-sub-ulaipv6"
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.vcn2_ipv6_rt.id
@@ -35,14 +59,6 @@ resource "oci_core_route_table" "vcn2_ipv6_rt" {
     destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_drg.drg_only_for_vcn2_and_proxyvcn.id
   }
-
-  # IPv4 route to VCN1 and Proxy VCN for sock5 proxy access
-#   route_rules {
-#     destination       = oci_core_vcn.vcn1.cidr_block # for VCN1 IPv4 CIDR through LPG
-#     destination_type  = "CIDR_BLOCK"
-#     network_entity_id = oci_core_local_peering_gateway.vcn2_to_vcn1_lpg.id
-#   }
-
   route_rules {
     destination       = oci_core_vcn.proxy_vcn.cidr_block # for proxyvcn IPv4 CIDR through DRG
     destination_type  = "CIDR_BLOCK"
@@ -78,10 +94,3 @@ resource "oci_core_default_security_list" "def_security_list_vcn2" {
 output "vcn2_OCID" {
   value = oci_core_vcn.vcn2.id
 }
-
-# resource "oci_core_local_peering_gateway" "vcn2_to_vcn1_lpg" {
-#   compartment_id = var.compartment_ocid
-#   vcn_id         = oci_core_vcn.vcn2.id
-#   display_name   = "vcn2_to_vcn1_lpg"
-#   peer_id = oci_core_local_peering_gateway.vcn1_to_vcn2_lpg.id
-# }

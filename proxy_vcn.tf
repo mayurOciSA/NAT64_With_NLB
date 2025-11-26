@@ -1,32 +1,39 @@
 # Proxy VCN and LPG
 
+variable "proxy_vcn_cidr_block" {
+  description = "IPv4 CIDR for the Proxy VCN"
+  type        = string
+  default     = "10.255.0.0/16"
+}
+
+variable "proxy_vcn_ipv6_cidr_block" {
+  description = "IPv6 CIDR for the Proxy VCN"
+  type        = string
+  default     = "fd00:abcd:0::/48"
+}
+
+variable "backend_subnet_cidr_block" {
+  description = "IPv4 CIDR for the backend subnet in Proxy VCN"
+  type        = string
+  default     = "10.255.0.0/24"
+}
+
+variable "backend_subnet_ipv6_cidr_block" {
+  description = "IPv6 CIDR for the backend subnet in Proxy VCN"
+  type        = string
+  default     = "fd00:abcd:0:200::/64"
+}
+
 resource "oci_core_vcn" "proxy_vcn" {
   compartment_id                   = var.compartment_ocid
   display_name                     = "Proxy-VCN"
-  cidr_block                       = "10.255.0.0/16"
-  ipv6private_cidr_blocks          = ["fd00:abcd:0::/48"]
+  cidr_block                       = var.proxy_vcn_cidr_block
+  ipv6private_cidr_blocks          = [var.proxy_vcn_ipv6_cidr_block]
   is_ipv6enabled                   = true
   is_oracle_gua_allocation_enabled = false
   dns_label                        = "pvcn"
 }
 
-# resource "oci_core_local_peering_gateway" "proxyvcn_to_vcn1_lpg" {
-#   compartment_id = var.compartment_ocid
-#   vcn_id         = oci_core_vcn.proxy_vcn.id
-#   display_name   = "proxyvcn_to_vcn1_lpg"
-#   peer_id        = oci_core_local_peering_gateway.vcn1_to_proxyvcn_lpg.id
-#   route_table_id = oci_core_route_table.proxy_lpg_ingress_rt.id
-# }
-
-# LPG ingress route table ("all IPv6 traffic to NLB private IP")
-# resource "oci_core_route_table" "proxy_lpg_ingress_rt" {
-#   compartment_id = var.compartment_ocid
-#   vcn_id         = oci_core_vcn.proxy_vcn.id
-#   display_name   = "proxy-vcn-lpg-ingress-rt"
-#   lifecycle {
-#     ignore_changes = [ route_rules ]
-#   }
-# }
 
 data "oci_identity_regions" "all_regions" {
 }
@@ -36,43 +43,12 @@ locals {
 }
 
 
-# ECMP not supported on LPGs, skipping enabling ECMP on LPG ingress route table
-# resource "null_resource" "ingress_rt_of_proxyvcn_to_vcn1_lpg" {
-#   depends_on = [oci_core_local_peering_gateway.proxyvcn_to_vcn1_lpg, 
-#                 local.backends_ipv6_ocids, 
-#                 oci_core_route_table.proxy_lpg_ingress_rt, 
-#                 data.oci_core_private_ips.backend_private_ipv4_objects, 
-#                 oci_core_instance.ula_test_vcn1_client, oci_core_instance.ula_test_vcn2_client, 
-#                 oci_core_drg_attachment.proxy_vcn_drg_attachment, oci_core_drg_attachment.vcn2_drg_attachment ]
-
-#   provisioner "local-exec" {
-    
-#     command = <<-EOT
-      
-#       exit 0
-#       set -e
-#       region_key=${local.region_key}
-#       export OCI_CLI_REGION=${var.oci_region}
-      
-#       echo "Enable ECMP on the LPG(proxy_lpg_ingress_rt)'s Ingress Route Table"
-#       oci raw-request --http-method PUT -\
-#       -target-uri https://iaas.$OCI_CLI_REGION.oraclecloud.com/20160918/routeTables/${oci_core_route_table.proxy_lpg_ingress_rt.id} \
-#       --request-body '{"isEcmpEnabled":"true"}' 
-
-#       # Update the route table with the new rules
-#       # oci network route-table update --rt-id ${oci_core_route_table.proxy_lpg_ingress_rt.id} --route-rules '${local.ingress_route_rules_json}' --force
-     
-#     EOT
-#   }
-# }
-
-
 # Backend Subnet
 resource "oci_core_subnet" "backend_subnet" {
   compartment_id             = var.compartment_ocid
   vcn_id                     = oci_core_vcn.proxy_vcn.id
-  cidr_block                 = "10.255.0.0/24"
-  ipv6cidr_block             = "fd00:abcd:0:200::/64"
+  cidr_block                 = var.backend_subnet_cidr_block
+  ipv6cidr_block             = var.backend_subnet_ipv6_cidr_block
   display_name               = "proxy-backend-subnet"
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.backend_subnet_rt.id
@@ -98,33 +74,16 @@ resource "oci_core_route_table" "backend_subnet_rt" {
     destination       = "0.0.0.0/0"
     destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_nat_gateway.nat_gw.id
-    route_type = "STATIC"
   }
-
-  # route_rules { # All IPv6 to LPG for return path, for vcn1 ULA, for post NAT64 of ingress traffic from internet via NATGW
-  #   destination       = "fd00:10:0::/48" #oci_core_vcn.vcn1.ipv6private_cidr_blocks[0]
-  #   destination_type  = "CIDR_BLOCK"
-  #   network_entity_id = oci_core_local_peering_gateway.proxyvcn_to_vcn1_lpg.id
-  #   route_type = "STATIC"
-  # }
 
   route_rules { # All IPv6 to DRG for return path, for vcn2 ULA, for post NAT64 of ingress traffic from internet via NATGW
-    destination       = "fd00:20:0::/48" #oci_core_vcn.vcn2.ipv6private_cidr_blocks[0]
+    destination       = var.vcn2_ipv6_cidr_block
     destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_drg.drg_only_for_vcn2_and_proxyvcn.id
-    route_type = "STATIC"
   }
 
-  #### IPv4 routes for internal communication for SOCK5 ####
-
-  # route_rules { # internal IPv4 traffic to VCN1 via LPG
-  #   destination       =  "10.0.1.0/24" # oci_core_subnet.vcn1_private_ipv6.cidr_block
-  #   destination_type  = "CIDR_BLOCK"
-  #   network_entity_id = oci_core_local_peering_gateway.proxyvcn_to_vcn1_lpg.id
-  # }
-
   route_rules { # internal IPv4 traffic to VCN2 via DRG
-    destination       = "10.1.1.0/24" #oci_core_vcn.vcn2.cidr_block
+    destination       = var.vcn2_cidr_block
     destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_drg.drg_only_for_vcn2_and_proxyvcn.id
   }
@@ -154,5 +113,3 @@ resource "oci_core_default_security_list" "def_security_list_pv" {
     source   = "::0/0" 
   }
 }
-
-
