@@ -1,11 +1,21 @@
 # OCI NAT64 Proxy VCN with just DRG and ECMP enabled Ingress Route Table, without NLB – End-to-End Terraform Deployment Guide
 
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Diagram](#diagram)
+- [What Will the User Get? (Deployment Output)](#i-what-will-the-user-get-deployment-output)
+- [What Do I Need to Change Before Deploying?](#ii-what-do-i-need-to-change-before-deploying)
+- [Deployment Steps](#iii-deployment-steps)
+- [Trade off between ECMP vs NLB.](#iv-trade-off-between-ecmp-vs-nlb)
+- [Testing](#v-testing)
+
 ---
 
 ## Introduction
 This guide will help you deploy a **dual-stack NAT64 Proxy VCN** using **Oracle Cloud Infrastructure (OCI)** with DRG integration. 
 
-The setup connects an IPv6-only subnet in VCN X (your production VCN) to IPv4-native resources via a transparent NAT Gateway and a backend pool (e.g., NAT64 appliances), all residing in a dedicated Proxy VCN. Instead VCN X you will havve your own already existing VCNs. The focus of this terraform is on proxy VCN, its DRG ingress/transit route table and backends performing NAT64. For testing backends are installed with Tayga.
+The setup connects an IPv6-only subnet in VCN X (your production VCN) to IPv4-native resources via a transparent NAT Gateway and a backend pool (e.g., NAT64 appliances), all residing in a dedicated Proxy VCN. Instead VCN X you will havve your own already existing VCNs. The focus of this terraform is on proxy VCN, its DRG ingress/transit route table and backends performing NAT64. *For testing purposes only*, backends are installed with Tayga.
 
 This entire architecture is deployable by the provided Terraform minor adjustments—enabling IPv6-to-IPv4 translation for cloud resources.
 
@@ -17,7 +27,7 @@ This entire architecture is deployable by the provided Terraform minor adjustmen
 
 ---
 
-## I. What Will the User Get? (Deployment Output)
+## What Will the User Get? (Deployment Output)
 
 After running this Terraform, you will have:
 
@@ -52,13 +62,13 @@ After running this Terraform, you will have:
 
 ---
 
-## II. What Do I Need to Change Before Deploying?
+## What Do I Need to Change Before Deploying?
 
 Rename local.tfvars.example to local.tfvars and fill in the placeholders with your values.
 
 ---
 
-## III. Deployment Steps
+## Deployment Steps
 
 ### 1. Initialize Terraform
 ```bash
@@ -80,7 +90,7 @@ terraform destroy --var-file=local.tfvars --auto-approve
 ## III. Trade off between ECMP vs NLB.
 ECMP based load balancing is crude but can work for certain usecases. The 2 downsides are:  1)When pool of backends is scaled up or down, in flight connections will get dropped, as flow based hashing done by DRG ingress route table for Proxy VCN changes aka it is not sticky for in-flight connections 2) You will need your own health check for NAT64 nodes.
 
-## IV. Testing
+## Testing
 From UlaClient node in VCN1 do the following:
 
 ### Testing ICMPv6 flows:
@@ -103,5 +113,5 @@ curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://
 Note, the `--resolve` parameter is needed for HTTPs, otherwise SNI expected by webserver won't be populated, and curl won't work. 
 With DNS64 of Telesis, they won't need `--resolve`.
 
-#### -tive Test
+#### Negative Test
 After turning off traffic on NATGW, above curl should stop working.
