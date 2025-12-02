@@ -4,11 +4,11 @@
 
 - [Introduction](#introduction)
 - [Diagram](#diagram)
-- [What Will the User Get? (Deployment Output)](#i-what-will-the-user-get-deployment-output)
-- [What Do I Need to Change Before Deploying?](#ii-what-do-i-need-to-change-before-deploying)
-- [Deployment Steps](#iii-deployment-steps)
-- [Trade off between ECMP vs NLB.](#iv-trade-off-between-ecmp-vs-nlb)
-- [Testing](#v-testing)
+- [What Will the User Get? (Deployment Output)](#what-will-the-user-get-deployment-output)
+- [What Do I Need to Change Before Deploying?](#what-do-i-need-to-change-before-deploying)
+- [Deployment Steps](#deployment-steps)
+- [Trade off between ECMP vs NLB.](#trade-off-between-ecmp-vs-nlb)
+- [Testing](#testing)
 
 ---
 
@@ -87,7 +87,7 @@ terraform apply --var-file=local.tfvars --auto-approve
 terraform destroy --var-file=local.tfvars --auto-approve
 ```
 
-## III. Trade off between ECMP vs NLB.
+## Trade off between ECMP vs NLB.
 ECMP based load balancing is crude but can work for certain usecases. The 2 downsides are:  1)When pool of backends is scaled up or down, in flight connections will get dropped, as flow based hashing done by DRG ingress route table for Proxy VCN changes aka it is not sticky for in-flight connections 2) You will need your own health check for NAT64 nodes.
 
 ## Testing
