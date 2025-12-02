@@ -103,5 +103,5 @@ curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://
 Note, the `--resolve` parameter is needed for HTTPs, otherwise SNI expected by webserver won't be populated, and curl won't work. 
 With DNS64 of Telesis, they won't need `--resolve`.
 
-### -tive Test
+#### -tive Test
 After turning off traffic on NATGW, above curl should stop working.
