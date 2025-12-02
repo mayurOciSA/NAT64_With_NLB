@@ -50,7 +50,6 @@ After running this Terraform, you will have:
 ### Output
 - Outputs include all OCIDs for generated resources & their private/ULA IPs.
 
-
 ---
 
 ## II. What Do I Need to Change Before Deploying?
@@ -85,18 +84,24 @@ ECMP based load balancing is crude but can work for certain usecases. The 2 down
 From UlaClient node in VCN1 do the following:
 
 ### Testing ICMPv6 flows:
+```shell
 ping6 64:ff9b::8.8.8.8 # Ping Google DNS via NAT64
-mtr 64:ff9b::8.8.8.8
-mtr 64:ff9b::23.219.5.221 # Ping www.Oracle.com
 
+mtr 64:ff9b::8.8.8.8
+
+mtr 64:ff9b::23.219.5.221 # Ping www.Oracle.com
+```
 With mtr you will see backend Tayga server's IPv6 address in the list of hops, as chosen by ECMP for that flow.
 
 ### Testing TCP/HTTPs flows:
 
+```Shell
 IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
 echo $IPv4_ADDR
 curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin -o 100mb.bin
+```
+Note, the `--resolve` parameter is needed for HTTPs, otherwise SNI expected by webserver won't be populated, and curl won't work. 
+With DNS64 of Telesis, they won't need `--resolve`.
 
-Note, the --resolve parameter is needed for HTTPs, otherwise SNI expected by webserver won't be populated, and curl won't work. With DNS64 of Telesis, they won't need --resolve.
-
-Also do negative testing. After turning off traffic on NATGW, above curl should stop working.
+### -tive Test
+After turning off traffic on NATGW, above curl should stop working.
