@@ -13,3 +13,4 @@ sock5.tf.txt
 scratch.txt
 ula.client.vcn1.tf.txt
 .terraform.tfstate.lock.info
+diagrams/.$NAT64.drawio.bkp

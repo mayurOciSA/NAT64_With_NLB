@@ -3,7 +3,7 @@
 resource "oci_bastion_bastion" "socks5_bastion" {
   bastion_type     = "STANDARD"
   compartment_id   = var.compartment_ocid 
-  target_subnet_id = oci_core_subnet.vcn2_private_ipv6.id
+  target_subnet_id = oci_core_subnet.vcnX_private_ipv6.id
 
   dns_proxy_status = "ENABLED" 
 
@@ -51,7 +51,7 @@ output "ssh_commands_via_proxy" {
         ${local.sock5_ssh_tunnel_command} ${local.ssh_no_host_key_check_options}
 
         # --- VCN2 ULA Client Instance ---
-        ssh ${local.ssh_no_host_key_check_options} -o "ProxyCommand nc -X 5 -x 127.0.0.1:8888 %h %p" opc@${oci_core_instance.ula_test_vcn2_client.create_vnic_details[0].private_ip}
+        ssh ${local.ssh_no_host_key_check_options} -o "ProxyCommand nc -X 5 -x 127.0.0.1:8888 %h %p" opc@${oci_core_instance.ula_test_vcnX_client.create_vnic_details[0].private_ip}
 
         # --- Backend Instances ---
         %{for ip in data.oci_core_private_ips.backend_private_ipv4_objects.private_ips~}

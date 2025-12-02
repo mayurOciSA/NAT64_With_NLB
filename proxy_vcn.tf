@@ -76,16 +76,16 @@ resource "oci_core_route_table" "backend_subnet_rt" {
     network_entity_id = oci_core_nat_gateway.nat_gw.id
   }
 
-  route_rules { # All IPv6 to DRG for return path, for vcn2 ULA, for post NAT64 of ingress traffic from internet via NATGW
-    destination       = var.vcn2_ipv6_cidr_block
+  route_rules { # All IPv6 to DRG for return path, for vcnX ULA, for post NAT64 of ingress traffic from internet via NATGW
+    destination       = var.vcnX_ipv6_cidr_block
     destination_type  = "CIDR_BLOCK"
-    network_entity_id = oci_core_drg.drg_only_for_vcn2_and_proxyvcn.id
+    network_entity_id = oci_core_drg.drg_only_for_vcnX_and_proxyvcn.id
   }
 
-  route_rules { # internal IPv4 traffic to VCN2 via DRG
-    destination       = var.vcn2_cidr_block
+  route_rules { # internal IPv4 traffic to vcnX via DRG
+    destination       = var.vcnX_cidr_block
     destination_type  = "CIDR_BLOCK"
-    network_entity_id = oci_core_drg.drg_only_for_vcn2_and_proxyvcn.id
+    network_entity_id = oci_core_drg.drg_only_for_vcnX_and_proxyvcn.id
   }
   
 }

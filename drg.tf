@@ -1,19 +1,19 @@
 # DRG for communication between VCN2 and Proxy VCN
-resource "oci_core_drg" "drg_only_for_vcn2_and_proxyvcn" {
+resource "oci_core_drg" "drg_only_for_vcnX_and_proxyvcn" {
   compartment_id = var.compartment_ocid
-  display_name   = "drg_only_for_vcn2_and_proxyvcn"
+  display_name   = "drg_only_for_vcnX_and_proxyvcn"
 }
 
 # DRG Attachment for VCN2
-resource "oci_core_drg_attachment" "vcn2_drg_attachment" {
-  drg_id         = oci_core_drg.drg_only_for_vcn2_and_proxyvcn.id
-  vcn_id         = oci_core_vcn.vcn2.id
-  display_name   = "vcn2-drg-attachment"
+resource "oci_core_drg_attachment" "vcnX_drg_attachment" {
+  drg_id         = oci_core_drg.drg_only_for_vcnX_and_proxyvcn.id
+  vcn_id         = oci_core_vcn.vcnX.id
+  display_name   = "vcnX-drg-attachment"
 }
 
 # DRG Attachment for Proxy VCN
 resource "oci_core_drg_attachment" "proxy_vcn_drg_attachment" {
-  drg_id       = oci_core_drg.drg_only_for_vcn2_and_proxyvcn.id
+  drg_id       = oci_core_drg.drg_only_for_vcnX_and_proxyvcn.id
   display_name = "proxy-vcn-drg-attachment"
   network_details {
     id   = oci_core_vcn.proxy_vcn.id
@@ -52,8 +52,8 @@ resource "null_resource" "ingress_for_vcn2_rt_for_drg" {
   depends_on = [local.backends_ipv6_ocids, 
                 oci_core_route_table.proxy_vcn_drg_ingress_rt, 
                 data.oci_core_private_ips.backend_private_ipv4_objects,
-                oci_core_instance.ula_test_vcn2_client, 
-                oci_core_drg_attachment.proxy_vcn_drg_attachment, oci_core_drg_attachment.vcn2_drg_attachment ]
+                oci_core_instance.ula_test_vcnX_client, 
+                oci_core_drg_attachment.proxy_vcn_drg_attachment, oci_core_drg_attachment.vcnX_drg_attachment ]
 
   provisioner "local-exec" {
     
