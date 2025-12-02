@@ -1,4 +1,4 @@
-# OCI NAT64 Proxy VCN with just DRG and ECMP enabled Ingress Route Table, without NLB – End-to-End Terraform Deployment Guide
+# OCI NAT64 Proxy VCN with just DRG and ECMP enabled Ingress Route Table
 
 ## Table of Contents
 
