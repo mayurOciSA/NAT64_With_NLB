@@ -13,7 +13,7 @@ This entire architecture is deployable by the provided Terraform minor adjustmen
 
 <img src="diagrams/NAT64.drawio.svg" alt="NAT64 Diagram" style="border: 2px solid black;"/>
 
-### Note: The diagram above illustrates a similar NAT64 setup. This project implements a highly available and scalable version of this architecture by using multiple backend NAT64/Tayga instances and ECMP (Equal-Cost Multi-Path) routing on the DRG Ingress Route Table to *crduely* load balance traffic across them.
+### Note: The diagram above illustrates a NAT64 setup by using multiple backend NAT64/Tayga instances and ECMP (Equal-Cost Multi-Path) routing on the DRG Ingress/Transit Route Table to *crduely* load balance traffic across backends.
 
 ---
 
