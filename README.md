@@ -1,15 +1,20 @@
-# OCI NAT64 Proxy VCN with LPG – End-to-End Terraform Deployment Guide
+# OCI NAT64 Proxy VCN with LPG
 
 ---
 
 ## Introduction
-This guide will help you deploy a **dual-stack NAT64 Proxy VCN** using **Oracle Cloud Infrastructure (OCI)** with Local Peering Gateway (LPG) integration. Instead of LPG you can also use DRG.
+This Teeraform setup will help you deploy a **dual-stack NAT64 Proxy VCN** using **Oracle Cloud Infrastructure (OCI)** with Local Peering Gateway (LPG) integration. Instead of LPG you can also use DRG.
 
-The setup connects an IPv6-only subnet in VCN1 (your production VCN) to IPv4-native resources via a transparent Network Load Balancer, NAT Gateway, and a backend pool (e.g., NAT64 appliances), all residing in a dedicated Proxy VCN. Instead VCN1 you will havve your own already existing VCNs. The focus of this terraform is on proxy VCN, NLB within it and backends performing NAT64.
+The setup connects an IPv6-only subnet in VCN1 (your production VCN) to IPv4-native resources via a transparent Network Load Balancer, NAT Gateway, and a backend pool (e.g., NAT64 appliances), all residing in a dedicated Proxy VCN. Instead VCN1 you will have your own already existing VCNs. The focus of this terraform is on proxy VCN, NLB within it and backends performing NAT64 using Tayga.
 
-This entire architecture is deployable by the provided Terraform manifest—with minor adjustments—enabling IPv6-to-IPv4 translation for cloud resources.
+For production grade setup, further tuning might be required for Tayga. It is left to users to manage their NAT64 NVAs.
 
 ---
+## Diagram
+
+<img src="diagrams/NAT64.drawio.svg" width='120%' height='120%' alt="NAT64 Diagram" style="border: 2px solid black;"/>
+
+### Note: The diagram above illustrates a NAT64 setup by using multiple backend NAT64/Tayga instances, NLB, &  Ingress Route Table for LPG.
 
 ## What Will the User Get? (Deployment Output)
 
@@ -29,7 +34,7 @@ After running this Terraform, you will have:
 - **A NAT Gateway** for IPv4 internet egress
 - **A Network Load Balancer (NLB)**
     - Private, dual-stack, acting in transparent (bump-in-the-wire) mode
-- **A sample compute instance** (intended as the NAT64 backend) in backend subnet
+- **A sample compute instance** (intended as the NAT64/Tayga backend) in backend subnet
 - **All three route tables configured**:
     - NLB Subnet: empty
     - Backend Subnet: routes all `0.0.0.0/0` to NAT Gateway (IPv4) and `::/0` to LPG (IPv6)
@@ -121,9 +126,12 @@ Calculated TLS Handshake Duration: %{time_appconnect}s minus %{time_connect}s
 Note, the `--resolve` parameter is needed for HTTPs, otherwise SNI expected by webserver won't be populated, and curl won't work. 
 With DNS64 of Telesis, they won't need `--resolve`.
 
-With following `mtr` command, you should see IPv6 of each of backend NAT64, showing ECMP.
+With following `mtr` command, you should see IPv6 of each of backend NAT64, showing load balancing @NLB. This is due to mutliple source ports used by `mtr` for tcp probing.
+
 ```shell
 mtr -T -P 443 64:ff9b::23.219.5.221
+# with src port control
+# traceroute -T -O info --sport=50845 -p 443 64:ff9b::23.219.5.221
 ```
 ### Testing UDP flows:
 
