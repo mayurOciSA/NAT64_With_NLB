@@ -11,7 +11,7 @@ This entire architecture is deployable by the provided Terraform manifest—with
 
 ---
 
-## I. What Will the User Get? (Deployment Output)
+## What Will the User Get? (Deployment Output)
 
 After running this Terraform, you will have:
 
@@ -50,13 +50,13 @@ After running this Terraform, you will have:
 
 ---
 
-## II. What Do I Need to Change Before Deploying?
+## What Do I Need to Change Before Deploying?
 
 Rename local.tfvars.example to local.tfvars and fill in the placeholders with your values.
 
 ---
 
-## III. Deployment Steps
+## Deployment Steps
 
 ### 1. Initialize Terraform
 ```bash
@@ -74,3 +74,66 @@ terraform apply --var-file=local.tfvars --auto-approve
 ```bash
 terraform destroy --var-file=local.tfvars --auto-approve
 ```
+
+## Why NLB ??
+With NLB you get:  1)When pool of backends is scaled up or down, in flight connections will remain sticky 2) You will also get health check for NAT64 nodes.
+Both these are handled by NLB, when it fronts NAT64 NVAs transparently.
+
+## Testing
+From UlaClient node in VCN 1 do the following:
+
+### Testing ICMPv6 flows:
+```shell
+ping6 64:ff9b::8.8.8.8 # Ping Google DNS via NAT64
+
+mtr 64:ff9b::8.8.8.8
+
+mtr 64:ff9b::23.219.5.221 # Ping www.Oracle.com
+```
+With mtr you will see backend Tayga server's IPv6 address in the list of hops, as chosen by ECMP for that flow.
+
+### Testing TCP/HTTPs flows:
+
+```Shell
+IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
+echo $IPv4_ADDR
+curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin -o 100mb.bin
+
+```
+Or
+```Shell
+IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
+echo $IPv4_ADDR
+
+curl -6 -s -o /dev/null -w "
+DNS Lookup Time: %{time_namelookup}s
+TCP Connect Time (cumulative): %{time_connect}s
+TLS Handshake Time (cumulative): %{time_appconnect}s
+Time it took for the server to start transferring data: %{time_starttransfer}
+Total Time: %{time_total}s
+
+Calculated TCP Handshake Duration: %{time_connect}s
+Calculated TLS Handshake Duration: %{time_appconnect}s minus %{time_connect}s 
+" --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin 
+
+```
+
+Note, the `--resolve` parameter is needed for HTTPs, otherwise SNI expected by webserver won't be populated, and curl won't work. 
+With DNS64 of Telesis, they won't need `--resolve`.
+
+With following `mtr` command, you should see IPv6 of each of backend NAT64, showing ECMP.
+```shell
+mtr -T -P 443 64:ff9b::23.219.5.221
+```
+### Testing UDP flows:
+
+```shell
+mtr -u 64:ff9b::23.219.5.221
+```
+
+#### Negative Test
+After turning off traffic on NATGW, above curl should stop working.
+
+IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
+echo $IPv4_ADDR
+curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin -o 100mb.bin
