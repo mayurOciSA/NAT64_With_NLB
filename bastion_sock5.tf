@@ -45,7 +45,7 @@ locals {
 }
 
 output "ssh_commands_via_proxy" {
-  description = "A list of SSH commands to connect to private instances via the SOCKS5 proxy. Max session TTL: ${oci_bastion_bastion.socks5_bastion.max_session_ttl_in_seconds} seconds."
+  description = "A list of SSH commands to connect to private instances via the SOCKS5 proxy."
   value = <<-EOT
         # Make sure the SOCKS5 tunnel is running in another terminal first:
         ${local.sock5_ssh_tunnel_command} ${local.ssh_no_host_key_check_options}
