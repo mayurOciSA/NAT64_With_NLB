@@ -5,3 +5,4 @@ local.tfvars
 .terraform.lock.hcl
 crash.log
 .git 
+diagrams/.$NAT64.drawio.bkp
