@@ -15,9 +15,10 @@
 ## Introduction
 This guide will help you deploy a **dual-stack NAT64 Proxy VCN** using **Oracle Cloud Infrastructure (OCI)** with DRG integration. 
 
-The setup connects an IPv6-only subnet in VCN X (your production VCN) to IPv4-native resources via a transparent NAT Gateway and a backend pool (e.g., NAT64 appliances), all residing in a dedicated Proxy VCN. Instead VCN X you will havve your own already existing VCNs. The focus of this terraform is on proxy VCN, its DRG ingress/transit route table and backends performing NAT64. *For testing purposes only*, backends are installed with Tayga.
+The setup connects an IPv6-only subnet in VCN X (your production VCN) to IPv4-native resources via a transparent NAT Gateway and a backend pool (e.g., NAT64 appliances), all residing in a dedicated Proxy VCN. Instead VCN X you will havve your own already existing VCNs. The focus of this terraform is on proxy VCN, its DRG ingress/transit route table and backends performing NAT64. 
 
-This entire architecture is deployable by the provided Terraform minor adjustments—enabling IPv6-to-IPv4 translation for cloud resources.
+*For testing purposes only*, backends are installed with Tayga.
+For production grade setup, further tuning might be required for Tayga. It is left to users to manage their NAT64 NVAs.
 
 ## Diagram
 
