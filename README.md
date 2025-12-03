@@ -109,9 +109,42 @@ With mtr you will see backend Tayga server's IPv6 address in the list of hops, a
 IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
 echo $IPv4_ADDR
 curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin -o 100mb.bin
+
 ```
+Or
+```Shell
+IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
+echo $IPv4_ADDR
+
+curl -6 -s -o /dev/null -w "
+DNS Lookup Time: %{time_namelookup}s
+TCP Connect Time (cumulative): %{time_connect}s
+TLS Handshake Time (cumulative): %{time_appconnect}s
+Time it took for the server to start transferring data: %{time_starttransfer}
+Total Time: %{time_total}s
+
+Calculated TCP Handshake Duration: %{time_connect}s
+Calculated TLS Handshake Duration: %{time_appconnect}s minus %{time_connect}s 
+" --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin 
+
+```
+
 Note, the `--resolve` parameter is needed for HTTPs, otherwise SNI expected by webserver won't be populated, and curl won't work. 
 With DNS64 of Telesis, they won't need `--resolve`.
 
+With following `mtr` command, you should see IPv6 of each of backend NAT64, showing ECMP.
+```shell
+mtr -T -P 443 64:ff9b::23.219.5.221
+```
+### Testing UDP flows:
+
+```shell
+mtr -u 64:ff9b::23.219.5.221
+```
+
 #### Negative Test
 After turning off traffic on NATGW, above curl should stop working.
+
+IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
+echo $IPv4_ADDR
+curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin -o 100mb.bin
