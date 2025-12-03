@@ -87,11 +87,12 @@ terraform apply --var-file=local.tfvars --auto-approve
 terraform destroy --var-file=local.tfvars --auto-approve
 ```
 
-## Trade off between ECMP vs NLB.
+## Trade off between ECMP(by Ingress Route table) vs NLB.
 ECMP based load balancing is crude but can work for certain usecases. The 2 downsides are:  1)When pool of backends is scaled up or down, in flight connections will get dropped, as flow based hashing done by DRG ingress route table for Proxy VCN changes aka it is not sticky for in-flight connections 2) You will need your own health check for NAT64 nodes.
+Both these are handled by NLB, when it fronts NAT64 NVAs transparently.
 
 ## Testing
-From UlaClient node in VCN1 do the following:
+From UlaClient node in VCN X do the following:
 
 ### Testing ICMPv6 flows:
 ```shell
