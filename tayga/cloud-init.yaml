@@ -59,13 +59,22 @@ write_files:
       echo "[INFO] NAT64 prefix: $NAT64_PREFIX"
       echo "[INFO] Tayga IPv4 pool: $TAYGA_POOL"
 
-      ##############################################
-      # 4. Install Tayga package
-      ##############################################
       echo "[INFO] Installing tayga (dnf)..."
-      dnf install -y oracle-epel-release-el9
-      dnf config-manager --set-enabled ol9_developer_EPEL
-      dnf install -y tayga
+
+      while ! dnf install -y oracle-epel-release-el9; do
+        echo "[WARN] dnf install oracle-epel-release-el9 failed. Retrying in 10 seconds..."
+        sleep 3
+      done
+
+      while ! dnf config-manager --set-enabled ol9_developer_EPEL; do
+        echo "[WARN] dnf config-manager failed. Retrying in 10 seconds..."
+        sleep 3
+      done
+
+      while ! dnf install -y tayga; do
+        echo "[WARN] dnf install tayga failed. Retrying in 10 seconds..."
+        sleep 3
+      done
 
       ##############################################
       # 5. Enable IPv4 & IPv6 forwarding (runtime)
@@ -154,6 +163,16 @@ write_files:
       # Allow ICMPv6 for PMTU and basic operations
       ip6tables -I FORWARD 1 -p icmpv6 -j ACCEPT
 
+      # Adjust TCP MSS to 1220 for faster PMTUD to IPv4 internet hosts
+      echo "[INFO] Adding TCPMSS iptables rules to adjust MSS to 1220 bytes"
+      iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1220
+      ip6tables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1220
+
+      # From ULA clients you can explore the PMTUD with following commands:
+      # ping -6 -c 1 -M do -s 1450 64:ff9b::195.181.172.6
+      # &  Specifically for tcp connections
+      #    watch -n 2 ss -6tnio dst "[64:ff9b::195.181.172.5]"
+
       ##############################################
       # 11. Start / restart tayga service
       ##############################################
@@ -213,7 +232,6 @@ write_files:
       # Allow ICMP echo requests (ping)
       iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
 
-      ##############################################
 
       echo "systemctl status tayga@nat64"
       systemctl status tayga@nat64 --no-pager
@@ -222,10 +240,16 @@ write_files:
 
       # (sleep 2; ping6 -c3 64:ff9b::8.8.8.8) &
       # tcpdump -i nat64 -n -vv -c 10 'icmp6 or icmp'
-      dnf install -y nc conntrack-tools
+      dnf install -y nc conntrack-tools wireshark-cli
+
+      echo "Starting tcpdump in background to capture all traffic for 3 hours to /tmp/traffic_capture.pcap rotationally to sigle file"
+      setsid nohup tcpdump -i any -s 0 -w /tmp/traffic_capture.pcap -v -v -v -tttt -G 10800 -W 1 2>&1 &
+      echo "Use one of below on node to see capture"
+      echo "tcpdump -vvv -ttt -r /tmp/traffic_capture.pcap -A -l"
+      echo "tshark -r /tmp/traffic_capture.pcap -T text -V -l"
 
       echo "[SCRIPT COMPLETE]"
 
 
 runcmd:
-  - [ bash, /root/tayga.install.sh ]
+  - "bash /root/tayga.install.sh > /tmp/tayga.install.log 2>&1"

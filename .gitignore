@@ -9,3 +9,5 @@ ipv4to6.sh
 tayga/tayga.install.sh
 tayga/ansible.yml
 tayga/cp.txt
+diagrams/.$NAT64.drawio.bkp
+.terraform.tfstate.lock.info
