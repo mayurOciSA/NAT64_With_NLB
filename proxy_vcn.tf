@@ -15,7 +15,7 @@ variable "proxy_vcn_ipv6_cidr_block" {
 variable "backend_subnet_cidr_block" {
   description = "IPv4 CIDR for the backend subnet in Proxy VCN"
   type        = string
-  default     = "10.255.0.0/24"
+  default     = "10.255.1.0/24"
 }
 
 variable "backend_subnet_ipv6_cidr_block" {
