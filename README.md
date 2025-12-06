@@ -138,6 +138,8 @@ With your own DNS64, you won't need `--resolve`.
 With following `mtr` command, you should see IPv6 of each of backend NAT64, showing ECMP.
 ```shell
 mtr -T -P 443 64:ff9b::23.219.5.221
+# with src port control for tcp flows, you should only see IPv6 of one of the backend NAT64 node.
+# traceroute -T -O info --sport=50845 -p 443 64:ff9b::23.219.5.221
 ```
 ### Testing UDP flows:
 
