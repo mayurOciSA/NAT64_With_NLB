@@ -9,6 +9,7 @@
 - [Deployment Steps](#deployment-steps)
 - [Trade off between ECMP vs NLB.](#trade-off-between-ecmp-vs-nlb)
 - [Testing](#testing)
+- [Limitations](#limitations)
 
 ---
 
@@ -18,7 +19,7 @@ This guide will help you deploy a **dual-stack NAT64 Proxy VCN** using **Oracle 
 The setup connects an IPv6-only subnet in VCN X (your production VCN) to IPv4-native resources via a transparent NAT Gateway and a backend pool (e.g., NAT64 appliances), all residing in a dedicated Proxy VCN. Instead VCN X you will havve your own already existing VCNs. The focus of this terraform is on proxy VCN, its DRG ingress/transit route table and backends performing NAT64. 
 
 *For testing purposes only*, backends are installed with Tayga.
-For production grade setup, further tuning might be required for Tayga. It is left to users to manage their NAT64 NVAs.
+Read section on *Limitations*.
 
 ## Diagram
 
@@ -132,7 +133,7 @@ Calculated TLS Handshake Duration: %{time_appconnect}s minus %{time_connect}s
 ```
 
 Note, the `--resolve` parameter is needed for HTTPs, otherwise SNI expected by webserver won't be populated, and curl won't work. 
-With DNS64 of Telesis, they won't need `--resolve`.
+With your own DNS64, you won't need `--resolve`.
 
 With following `mtr` command, you should see IPv6 of each of backend NAT64, showing ECMP.
 ```shell
@@ -150,3 +151,13 @@ After turning off traffic on NATGW, above curl should stop working.
 IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
 echo $IPv4_ADDR
 curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin -o 100mb.bin
+
+## Limitations
+- Users are expected to adjust shape or #OCPU of backend nodes where NAT64 software is installed as per their bandwidth needs.
+- Users are expected to adjust the # of backends nodes as per their bandwidth needs. Total bandwidth in Gbps provided by setup is ~(#OCPU of each backend node)*(# backend nodes)
+- Users are expected to adjust the SL/NSG rules, as per security needs. Also if needed harden OL installation.
+- The setup chooses latest OL version as OS for backends for a given region, if you want hardcoded OS image, please alter the code.
+- For production grade setup, further tuning might be required for Tayga, esp timeouts for con-tracking, poolsize of virtual IPv4s used by Tayga, log exports for Tayga etc. It is left to users to manage their NAT64 NVAs. 
+- Setup appropriate healthchecks for backends.
+- The setup has not been tested for long running connections.
+- Cloudinit script for installation of Tayga is only tested for OL9.
