@@ -1,5 +1,14 @@
 # OCI NAT64 Proxy VCN with LPG
 
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Diagram](#diagram)
+- [What Will the User Get? (Deployment Output)](#what-will-the-user-get-deployment-output)
+- [What Do I Need to Change Before Deploying?](#what-do-i-need-to-change-before-deploying)
+- [Deployment Steps](#deployment-steps)
+- [Testing](#testing)
+- [Limitations](#limitations)
 ---
 
 ## Introduction
@@ -8,6 +17,7 @@ This Teeraform setup will help you deploy a **dual-stack NAT64 Proxy VCN** using
 The setup connects an IPv6-only subnet in VCN1 (your production VCN) to IPv4-native resources via a transparent Network Load Balancer, NAT Gateway, and a backend pool (e.g., NAT64 appliances), all residing in a dedicated Proxy VCN. Instead VCN1 you will have your own already existing VCNs. The focus of this terraform is on proxy VCN, NLB within it and backends performing NAT64 using Tayga.
 
 For production grade setup, further tuning might be required for Tayga. It is left to users to manage their NAT64 NVAs.
+Read section on Limitations.
 
 ---
 ## Diagram
@@ -145,3 +155,13 @@ After turning off traffic on NATGW, above curl should stop working.
 IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
 echo $IPv4_ADDR
 curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin -o 100mb.bin
+
+## Limitations
+- Users are expected to adjust shape or #OCPU of backend nodes where NAT64 software is installed as per their bandwidth needs.
+- Users are expected to adjust the # of backends nodes as per their bandwidth needs. Total bandwidth in Gbps provided by setup is ~(#OCPU of each backend node)*(# backend nodes)
+- Users are expected to adjust the SL/NSG rules, as per security needs. Also if needed harden OL installation.
+- The setup chooses latest OL version as OS for backends for a given region, if you want hardcoded OS image, please alter the code.
+- For production grade setup, further tuning might be required for Tayga, esp timeouts for con-tracking, poolsize of virtual IPv4s used by Tayga, log exports for Tayga etc. It is left to users to manage their NAT64 NVAs. 
+- Setup appropriate healthchecks for backends.
+- The setup has not been tested for long running connections say for connections running longer than 1 minute.
+- Cloudinit script for installation of Tayga is only tested for OL9.
