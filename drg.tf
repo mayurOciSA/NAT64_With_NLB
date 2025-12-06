@@ -63,8 +63,8 @@ resource "null_resource" "ingress_for_vcn2_rt_for_drg" {
       
       echo "Enable ECMP on the DRG(proxy_vcn_drg_ingress_rt)'s Ingress Route Table"
 
-      oci raw-request --http-method PUT -\
-      -target-uri https://iaas.$OCI_CLI_REGION.oraclecloud.com/20160918/routeTables/${oci_core_route_table.proxy_vcn_drg_ingress_rt.id} \
+      oci raw-request --http-method PUT \
+      --target-uri https://iaas.$OCI_CLI_REGION.oraclecloud.com/20160918/routeTables/${oci_core_route_table.proxy_vcn_drg_ingress_rt.id} \
       --request-body '{"isEcmpEnabled":"true"}' 
 
       echo "First 2 route rules for ECMP to backends for IPv6 traffic to NAT64-ed"
@@ -73,6 +73,9 @@ resource "null_resource" "ingress_for_vcn2_rt_for_drg" {
       # Update the route table with the new rules, NOTE double single quotes to avoid shell issues for JSON of route-rules !
 
       oci network route-table update --rt-id ${oci_core_route_table.proxy_vcn_drg_ingress_rt.id} --route-rules '${local.ingress_route_rules_json}' --force
+
+      oci raw-request --http-method GET \
+      --target-uri https://iaas.$OCI_CLI_REGION.oraclecloud.com/20160918/routeTables/${oci_core_route_table.proxy_vcn_drg_ingress_rt.id}
      
     EOT
   }
