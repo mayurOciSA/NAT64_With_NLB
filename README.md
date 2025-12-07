@@ -134,15 +134,18 @@ Calculated TLS Handshake Duration: %{time_appconnect}s minus %{time_connect}s
 ```
 
 Note, the `--resolve` parameter is needed for HTTPs, otherwise SNI expected by webserver won't be populated, and curl won't work. 
-With DNS64 of Telesis, they won't need `--resolve`.
+With your own DNS64 setup, you won't need `--resolve`.
 
 With following `mtr` command, you should see IPv6 of each of backend NAT64, showing load balancing @NLB. This is due to mutliple source ports used by `mtr` for tcp probing.
 
 ```shell
 mtr -T -P 443 64:ff9b::23.219.5.221
-# with src port control
-# traceroute -T -O info --sport=50845 -p 443 64:ff9b::23.219.5.221
 ```
+If you want src port control, install traceroute on ULA clients and execute the following command. Here you should see only one hop chosen for that TCP flow.
+```Shell
+traceroute -T -O info --sport=50845 -p 443 64:ff9b::23.219.5.221
+```
+
 ### Testing UDP flows:
 
 ```shell

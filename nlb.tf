@@ -30,6 +30,7 @@ resource "oci_network_load_balancer_backend_set" "nlb-bes-nat64" {
   policy                                = "FIVE_TUPLE"
   is_instant_failover_enabled           = true
   is_instant_failover_tcp_reset_enabled = true
+  is_fail_open                          = false 
   is_preserve_source                    = true # # Preserve source IP for backend instances
   ip_version                            = "IPV6"
 
