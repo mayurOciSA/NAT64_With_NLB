@@ -61,6 +61,12 @@ variable "instance_memory_in_gbs" {
   type        = number
 }
 
+variable "instance_boot_volume_size_in_gbs" {
+  default     = 60
+  description = "boot_volume_size size for backend instances"
+  type        = number
+}
+
 variable "ssh_public_key" {
   description = "Contents of SSH public key file. Used to enable login to instance"
   type        = string
@@ -71,7 +77,12 @@ variable "ssh_private_key_local_path" {
   type        = string
 }
 
-variable "backend_count" {
+variable "backend_nat64_count" {
+  type    = number
+  default = 1
+}
+
+variable "backend_nat66_count" {
   type    = number
   default = 1
 }

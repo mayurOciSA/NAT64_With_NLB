@@ -5,14 +5,24 @@ oci_region                = "us-ashburn-1"
 user_ocid        = "ocid1.user.oc1.."
 fingerprint      = "11:26:47:99:........"
 private_key_path = "/Users/mraleras/.oci/oci_api_key.pem"
-backend_count    = 1
+
+backend_nat64_count    = 0
+backend_nat66_count    = 1
 
 proxy_vcn_ipv4_cidr    = "10.1.0.0/16"
 proxy_vcn_ipv6_cidr    = "fd00:20:0::/48"
+
+# all subnets below are subnets of Proxy VCN
 nlb_subnet_ipv4_cidr   = "10.1.1.0/24"
 nlb_subnet_ipv6_cidr   = "fd00:20:0:100::/64"
-backend_subnet_ipv4_cidr = "10.1.2.0/24"
-backend_subnet_ipv6_cidr = "fd00:20:0:200::/64"
+backend_nat64_subnet_ipv4_cidr = "10.1.2.0/24"
+backend_nat64_subnet_ipv6_cidr = "fd00:20:0:200::/64"
+backend_nat66_subnet_ipv4_cidr = "10.1.3.0/24"
+bastion_subnet_ipv4_cidr       = "10.1.4.0/24"
+
+# backend_nat66_subnet_ipv6_cidr = NOT needed as OCI assigned GUA is all we needed
+
+# IMPORTANT: Following ssh key pair is used for all backend nodes of NAT64, NAT66 and also for SOCK5 proxy in proxy VCN for setup.
 
 # ssh_public_key and ssh_private_key_local_path are public and private keys from the same/one pair
 # ssh_public_key is string format of the public key

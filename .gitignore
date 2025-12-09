@@ -13,3 +13,6 @@ diagrams/.$NAT64.drawio.bkp
 .terraform.tfstate.lock.info
 updatert.sh
 json.json
+*.log
+nat66/1.sh
+test.ci.yml

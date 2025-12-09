@@ -1,0 +1,10 @@
+#cloud-config
+write_files:
+  - path: /root/nat66.setup.sh
+    permissions: '0755'
+    owner: root:root
+    content: |
+      ${nat66_script}
+
+runcmd:
+  - "bash /root/nat66.setup.sh > /tmp/nat66.setup.log 2>&1"
