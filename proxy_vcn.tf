@@ -83,12 +83,10 @@ resource "oci_core_route_table" "backend_nat64_subnet_rt" {
 
   route_rules { # IPv4 to OCI NATGW for outbound internet traffic
     destination       = "0.0.0.0/0"
-    destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_nat_gateway.nat_gw.id
   }
-  route_rules { # All IPv6 to DRG for return path, ingress traffic from internet => NATGW => backend_nat64 ...Then fwd to DRG
-    destination       = "::/0"
-    destination_type  = "CIDR_BLOCK"
+  route_rules {                    # All IPv6 to DRG for return path, ingress traffic from Internet => NATGW => backend_nat64 ...Then fwd to DRG
+    destination       = "fc00::/7" # destination will be ULA post reversal of NAT64 on return path
     network_entity_id = oci_core_drg.drg_vcnX_and_proxyvcn.id
   }
 }
@@ -148,7 +146,7 @@ resource "oci_core_subnet" "backend_nat66_subnet" {
   ipv6cidr_block             = cidrsubnet("${local.proxy_vcn_gua_prefix}", 8, 1) # add 8 to 56 to get /64, then subnet /64 (e.g., 2001:...:0100::/64)
   display_name               = "proxy-backend_nat666-subnet"
   prohibit_public_ip_on_vnic = true # no public IPv4 addresses on VNICs
-  route_table_id             = oci_core_route_table.backend_nat64_subnet_rt.id
+  route_table_id             = oci_core_route_table.backend_nat66_subnet_rt.id
   security_list_ids          = [oci_core_default_security_list.def_security_list_pv.id]
   dns_label                  = "benatsixsixsb"
 }
@@ -159,14 +157,21 @@ resource "oci_core_route_table" "backend_nat66_subnet_rt" {
   vcn_id         = oci_core_vcn.proxy_vcn.id
   display_name   = "proxy-backend_nat66-rt"
 
-  route_rules { # IPv4 to NAT Gateway for outbound internet traffic
+  # IPv4 to Internet Gateway for outbound internet traffic, for package downloads only
+  route_rules {
     destination       = "0.0.0.0/0"
-    destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_nat_gateway.nat_gw.id
   }
-  route_rules { # All IPv6 to LPG for return path, for post NAT64 of ingress traffic from internet via NATGW
-    destination       = "::/0"
-    destination_type  = "CIDR_BLOCK"
+
+  # GUA IPv6 to Internet Gateway for outbound internet traffic, for traffic already NAT66-ed by backend_nat66 nodes
+  route_rules {
+    destination       = "2000::/3"
+    network_entity_id = oci_core_internet_gateway.proxy_igw.id
+  }
+
+  # All IPv6 ULA to DRG for traffic, for post NAT66 of {ingress/response/inbound traffic from internet/IGW}
+  route_rules {
+    destination       = "fc00::/7"
     network_entity_id = oci_core_drg.drg_vcnX_and_proxyvcn.id
   }
 }
@@ -179,7 +184,6 @@ resource "oci_core_internet_gateway" "proxy_igw" {
 }
 
 # Bastion Subnet
-
 variable "bastion_subnet_ipv4_cidr" {
   description = "The IPv4 CIDR block for the bastion_subnet."
 }
@@ -203,7 +207,6 @@ resource "oci_core_route_table" "bastion_subnet_rt" {
 
   route_rules { # for SOCK5 Proxy to reach ULA Clients in VCN X
     destination       = oci_core_subnet.vcnX_private_ipv6.cidr_block
-    destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_drg.drg_vcnX_and_proxyvcn.id
   }
 }

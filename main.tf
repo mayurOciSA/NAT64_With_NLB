@@ -93,7 +93,7 @@ data "oci_core_images" "oracle_linux_images_oci" {
   operating_system_version = "9"
   shape                    = var.instance_shape #"VM.Standard.A1.Flex"
   sort_by                  = "TIMECREATED"
-  sort_order               = "DESC"
+  sort_order               = "ASC"
 }
 
 # Grab AD data for OCI VCN

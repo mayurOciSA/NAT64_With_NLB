@@ -20,8 +20,8 @@ resource "oci_core_instance" "ula_test_vcnX_client" {
   }
 
   source_details {
-    source_type = "image"
-    source_id   = data.oci_core_images.oracle_linux_images_oci.images[0].id
+    source_type             = "image"
+    source_id               = data.oci_core_images.oracle_linux_images_oci.images[0].id
     boot_volume_size_in_gbs = var.instance_boot_volume_size_in_gbs
   }
   metadata = {

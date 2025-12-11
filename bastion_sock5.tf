@@ -3,19 +3,24 @@
 resource "oci_bastion_bastion" "socks5_bastion" {
   bastion_type     = "STANDARD"
   compartment_id   = var.compartment_ocid
-  target_subnet_id = oci_core_subnet.bastion_subnet.id # Subnet where Bastion will be deployed, TODO: create a dedicated subnet for bastion
+  target_subnet_id = oci_core_subnet.bastion_subnet.id # Subnet where Bastion will be deployed
 
   dns_proxy_status = "ENABLED"
 
   name                         = "socks5-proxy-bastion"
-  client_cidr_block_allow_list = ["0.0.0.0/0"] # Restrict this to your public IP range for security
-  max_session_ttl_in_seconds   = 10800         # 3 hours
+  client_cidr_block_allow_list = ["0.0.0.0/0"] # Restrict this to your devbox's public IP range for security
+  max_session_ttl_in_seconds   = 10800         # We have, 3 hours max session ttl
+}
+
+resource "terraform_data" "always_replace" {
+  input = timestamp() # always changes
 }
 
 resource "oci_bastion_session" "socks5_session" {
   bastion_id = oci_bastion_bastion.socks5_bastion.id
   key_details {
-    public_key_content = var.ssh_public_key # Your SSH public key content
+    # Your SSH public key content, ideally should be different from one you have for your backend-nodes.
+    public_key_content = var.ssh_public_key
   }
 
   # SOCKS5 Session Type
@@ -28,6 +33,11 @@ resource "oci_bastion_session" "socks5_session" {
   display_name           = "dynamic-socks5-session"
   key_type               = "PUB"
   session_ttl_in_seconds = 10800 # Match or be less than bastion's max_session_ttl_in_seconds
+
+  lifecycle {
+    # always create a new session on each apply, as OCI Bastion does not allows renewal of existing sessions
+    replace_triggered_by = [terraform_data.always_replace]
+  }
 }
 
 data "oci_bastion_session" "sock5_session_obj" {
@@ -35,6 +45,7 @@ data "oci_bastion_session" "sock5_session_obj" {
 }
 
 locals {
+  # change ssh_custom_options as per your needs
   ssh_custom_options = " -o ConnectionAttempts=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i ${var.ssh_private_key_local_path}"
   ssh_proxy_options  = " -o \"ProxyCommand nc -X 5 -x 127.0.0.1:8888 %h %p\" "
   sock5_ssh_tunnel_command = replace(
@@ -48,8 +59,10 @@ locals {
 output "ssh_commands_via_proxy" {
   description = "A list of SSH commands to connect to private instances via the SOCKS5 proxy."
   value       = <<-EOT
-        # Make sure the SOCKS5 tunnel is running in another terminal first:
-        ${local.sock5_ssh_tunnel_command} ${local.ssh_custom_options}
+
+        # SOCKS5 tunnel should be already running in background for each fresh apply.
+        # Nonetheless, run the following command in another terminal:
+        ${local.sock5_ssh_tunnel_command}
 
         # --- VCN X ULA Client Instance ---
         ssh ${local.ssh_custom_options} ${local.ssh_proxy_options} opc@${oci_core_instance.ula_test_vcnX_client.create_vnic_details[0].private_ip}
@@ -69,7 +82,7 @@ output "ssh_commands_via_proxy" {
 
 # Start SOCK5 Tunnel and wait for success
 resource "terraform_data" "SOCK5_tunnel_start" {
-  depends_on = [data.oci_bastion_session.sock5_session_obj]
+  depends_on = [data.oci_bastion_session.sock5_session_obj, oci_bastion_session.socks5_session]
 
   provisioner "local-exec" {
     command = <<EOT
@@ -94,7 +107,7 @@ resource "terraform_data" "SOCK5_tunnel_start" {
     echo "Tunnel started with PID: $TUNNEL_PID. Waiting 5 seconds for establishment..."
     
     # Wait for a few seconds to let the tunnel try to establish
-    sleep 5
+    sleep 10
     
     # Check if the process is still running. This is a basic health check.
     if ! ps -p $TUNNEL_PID > /dev/null; then
@@ -109,6 +122,12 @@ resource "terraform_data" "SOCK5_tunnel_start" {
     # provisioner with a 'destroy' block, otherwise it will remain orphaned.
     
     EOT
+  }
+
+  lifecycle {
+    # always create a new session on each apply,
+    # as OCI Bastion does not allows renewal of existing sessions
+    replace_triggered_by = [terraform_data.always_replace]
   }
 }
 

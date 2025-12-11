@@ -56,8 +56,8 @@ resource "oci_network_load_balancer_backend" "nlb-nat66-be" {
   weight                   = 1
 }
 
-output "nlb_nat66" {
-  value = oci_network_load_balancer_network_load_balancer.nlb_nat66
+output "nlb_nat66_ips" {
+  value = [oci_network_load_balancer_network_load_balancer.nlb_nat66.assigned_ipv6, oci_network_load_balancer_network_load_balancer.nlb_nat66.assigned_private_ipv4]
 }
 
 data "oci_core_ipv6s" "nlb_nat66_private_ipv6" {

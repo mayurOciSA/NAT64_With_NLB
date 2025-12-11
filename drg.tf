@@ -30,14 +30,11 @@ resource "oci_core_route_table" "proxy_vcn_drg_ingress_rt" {
   display_name   = "proxy-vcn-drg-ingress-rt"
 
   route_rules {
-    destination       = "64:ff9b::/96" # for NAT64
-    destination_type  = "CIDR_BLOCK"
+    destination       = "64:ff9b::/96" # for NAT64, will pass through NLB for NAT64
     network_entity_id = data.oci_core_ipv6s.nlb_nat64_private_ipv6.ipv6s[0].id
   }
   route_rules {
-    destination       = "::/0" # or just put GUA
-    destination_type  = "CIDR_BLOCK"
+    destination       = "2000::/3" # or Just put GUA to cover all traffic to IPv6 internet, will pass through NLB for NAT66
     network_entity_id = data.oci_core_ipv6s.nlb_nat66_private_ipv6.ipv6s[0].id
   }
 }
-

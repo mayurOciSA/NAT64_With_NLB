@@ -52,20 +52,17 @@ resource "oci_core_route_table" "vcnX_ipv6_rt" {
 
   route_rules {
     destination       = "64:ff9b::/96" # for NAT64
-    destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_drg.drg_vcnX_and_proxyvcn.id
   }
 
   route_rules {
-    destination       = "::/0" # or just put GUA
-    destination_type  = "CIDR_BLOCK"
+    destination       = "2000::/3" # GUA for all traffic to IPv6 internet, will pass through NAT66
     network_entity_id = oci_core_drg.drg_vcnX_and_proxyvcn.id
   }
 
   # route_rules for pvt IPv4 added for bastions access
   route_rules {
     destination       = var.proxy_vcn_ipv4_cidr
-    destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_drg.drg_vcnX_and_proxyvcn.id
   }
 }

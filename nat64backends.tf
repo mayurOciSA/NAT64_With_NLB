@@ -24,13 +24,13 @@ resource "oci_core_instance" "nat64_backend" {
   }
 
   source_details {
-    source_type = "image"
-    source_id   = data.oci_core_images.oracle_linux_images_oci.images[0].id
+    source_type             = "image"
+    source_id               = data.oci_core_images.oracle_linux_images_oci.images[0].id
     boot_volume_size_in_gbs = var.instance_boot_volume_size_in_gbs
   }
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
-    # TODO
+    # TODO REMOVE
     # user_data = base64encode(templatefile("${path.module}/nat64/cloud-init.yaml", {
     #   nat64_script = file("${path.module}/nat64/tayga.install.sh")
     # }))
@@ -60,20 +60,12 @@ data "oci_core_ipv6s" "backend_nat64_private_ipv6" {
 }
 
 output "backend_nat64_private_ipv6s" {
-  value = data.oci_core_ipv6s.backend_nat64_private_ipv6.ipv6s[*]
+  value = data.oci_core_ipv6s.backend_nat64_private_ipv6.ipv6s[*].ip_address
 }
 
 output "backend_nat64_private_ipv4s" {
-  value = data.oci_core_private_ips.backend_nat64_private_ipv4.private_ips[*]
+  value = data.oci_core_private_ips.backend_nat64_private_ipv4.private_ips[*].ip_address
 }
-
-#TODO
-# resource "local_file" "rendered_cloud_init_nat64" {
-#   filename = "${path.module}/nat64/cloud-init.rendered.yaml"
-#   content = templatefile("${path.module}/nat64/cloud-init.yaml", {
-#     nat64_script = file("${path.module}/nat64/tayga.install.sh")
-#   })
-# }
 
 resource "terraform_data" "provision_nat64_backend" {
   count      = var.backend_nat64_count
@@ -84,21 +76,29 @@ resource "terraform_data" "provision_nat64_backend" {
       nat64ipv4host = data.oci_core_private_ips.backend_nat64_private_ipv4.private_ips[count.index].ip_address
     }
     command = <<EOT
-        set -o pipefail
 
-        echo "Provisioning NAT64 Backend at $nat64ipv4host"
-        scp ${local.ssh_proxy_options} -i ${var.ssh_private_key_local_path} ${path.module}/nat64/tayga.install.sh opc@$nat64ipv4host:~/tayga.install.sh
-        if [ $? -ne 0 ]; then
-          echo "SCP failed for NAT64"
-          exit 1
+        # Exit with success if remote node already has nat64_setup.sh script
+        if ssh ${local.ssh_proxy_options} ${local.ssh_custom_options} opc@$nat64ipv4host "test -f ~/nat64_setup.sh"; then
+          echo "NAT64 Backend already provisioned at $nat64ipv4host"
+          exit 0
         fi
 
-        ssh ${local.ssh_custom_options} ${local.ssh_proxy_options} \
+        echo "Provisioning NAT64 Backend at $nat64ipv4host"
+        scp ${local.ssh_proxy_options} -i ${var.ssh_private_key_local_path} ${path.module}/nat64/nat64_setup.sh opc@$nat64ipv4host:~/nat64_setup.sh
+        if [ $? -ne 0 ]; then
+          echo "SCP failed for NAT64 $nat64ipv4host"
+          exit 1
+        fi
+        echo "SCP completed for NAT64 $nat64ipv4host"
+
+        mkdir -p ${path.module}/nat64/installation_logs
+        ssh ${local.ssh_proxy_options} ${local.ssh_custom_options} \
           opc@$nat64ipv4host \
-          "sudo bash ~/tayga.install.sh" 2>&1 | tee ${path.module}/nat64/tayga.install.$nat64ipv4host.log
+          "sudo bash ~/nat64_setup.sh" > ${path.module}/nat64/installation_logs/nat64_setup_$(date +'%Y-%m-%d-%H%M')_$nat64ipv4host.log 2>&1
+        
         rc=$?
         echo "NAT64 Provisioning completed with exit code $rc for $nat64ipv4host"
-        # exit $rc
+        exit $rc
     EOT
   }
 }
