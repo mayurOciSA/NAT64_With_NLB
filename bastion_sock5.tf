@@ -46,7 +46,7 @@ data "oci_bastion_session" "sock5_session_obj" {
 
 locals {
   # change ssh_custom_options as per your needs
-  ssh_custom_options = " -o ConnectionAttempts=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i ${var.ssh_private_key_local_path}"
+  ssh_custom_options = " -o ConnectionAttempts=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i ${var.ssh_private_key_local_path}"
   ssh_proxy_options  = " -o \"ProxyCommand nc -X 5 -x 127.0.0.1:8888 %h %p\" "
   sock5_ssh_tunnel_command = replace(
     replace(
@@ -65,7 +65,9 @@ output "ssh_commands_via_proxy" {
         ${local.sock5_ssh_tunnel_command}
 
         # --- VCN X ULA Client Instance ---
-        ssh ${local.ssh_custom_options} ${local.ssh_proxy_options} opc@${oci_core_instance.ula_test_vcnX_client.create_vnic_details[0].private_ip}
+        %{for ip in data.oci_core_private_ips.ula_test_vcnX_client_private_ipv4.private_ips}
+        ssh ${local.ssh_custom_options} ${local.ssh_proxy_options} opc@${ip.ip_address}
+        %{endfor~}%
 
         # --- Backend NAT64 Instances ---
         %{for ip in data.oci_core_private_ips.backend_nat64_private_ipv4.private_ips~}
@@ -84,16 +86,17 @@ output "ssh_commands_via_proxy" {
 resource "terraform_data" "SOCK5_tunnel_start" {
   depends_on = [data.oci_bastion_session.sock5_session_obj, oci_bastion_session.socks5_session]
 
+  # TODO fix the intermittency
   provisioner "local-exec" {
     command = <<EOT
     set -e # Exit immediately if a command exits with a non-zero status.
 
     echo "Attempting to start SOCKS5 SSH Tunnel..."
     echo "Command: ${local.sock5_ssh_tunnel_command}"
-    sleep 10
+    sleep 12
 
     # Execute the SSH command synchronously in the background, redirecting output
-    # The 'sleep' and 'wait' commands are used to keep the provisioner running 
+    # The 'sleep' command is used to keep the provisioner running 
     # and fail only if the SSH command itself fails immediately (e.g., bad connection).
     # Since we can't fully check the health of the tunnel inside 'local-exec' 
     # without a specific health check script, we rely on the SSH command's 

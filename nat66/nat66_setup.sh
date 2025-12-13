@@ -1,32 +1,21 @@
 #!/bin/bash
-# ==============================================================================
-# Oracle Linux 9 - OCI NAT66 Gateway Configuration Script
-# ==============================================================================
+# Script to setup NAT66 Gateway onOracle Linux 9 Compute running on OCI
 
-# 13. Start with : set -euo pipefail -x
+# Shell strict mode with logging
 set -euo pipefail
 set -x
 
-# ==============================================================================
-# REQUIREMENTS LIST
-# ==============================================================================
-# 1. Core Technology: Use only nftables and Linux kernel conntrack. Disable firewalld.
-# 2. Installation & Modules: Install nftables/conntrack-tools, load nf_conntrack/nf_nat.
-# 3. Dynamic Discovery: Detect primary interface and GUA IPv6 addresses dynamically.
-# 4. SNAT Pool Handling: Handle non-contiguous IPs and use kernel port exhaustion logic.
-# 5. NAT Logic: SNAT all ULA (fc00::/7) to the GUA pool.
-# 6. Conntrack Tuning: Table size 262144, TCP Idle 30m, UDP/ICMP 5m.
-# 7. TCP/MSS Tuning: Clamp MSS to 1240 bytes.
-# 8. Idempotency & Persistence: Script is re-runnable; configs survive reboot.
-# 9. Host Connectivity: Allow Host SSH, Ping (v4/v6), and Loopback.
-# 10. Traceroute Visibility: Allow TTL exceeded replies from Gateway.
-# 11. Testing & Debugging: Include verification commands.
-# 12. MTU Handling: Reply with ICMPv6 Packet Too Big if MTU > 1500.
-# 13. Shell strict mode (Applied at top).
-# 14. Leverage Python3 and package manager (DNF for OL9) for simplification.
-# ==============================================================================
+# Core Technology: Uses only nftables and Linux kernel conntrack. Disable firewalld.
+# Installation & Modules: Install nftables/conntrack-tools, load nf_conntrack/nf_nat.
+# Dynamic Discovery: Detect primary interface and GUA IPv6 addresses dynamically.
+# SNAT Pool Handling: Handle non-contiguous IPs and use kernel port exhaustion logic.
+# NAT Logic: SNAT all ULA ingress traffic (fc00::/7) to the all GUA IPs of the host's primary interface.
+# Conntrack Tuning: Table size 262144, TCP Idle 30m, UDP/ICMP 5m.
+# Idempotency & Persistence: Script is re-runnable; configs should survive reboot(but not tested).
+# Host Connectivity: Allow Host SSH, Ping (v4/v6), and Loopback.
+# Traceroute Visibility: Allow TTL exceeded replies from Gateway.
 
-echo ">>> [Req 1 & 2] Preparing System: Installing packages and disabling firewalld..."
+echo ">>> Preparing System: Installing packages and disabling firewalld..."
 
 # Install networking tools.
 dnf install -y nftables conntrack-tools iproute python3
@@ -45,7 +34,7 @@ nf_conntrack
 nf_nat
 EOF
 
-echo ">>> [Req 3] Dynamic Discovery: Identifying Interface and IPs via Python..."
+echo ">>> Dynamic Discovery: Identifying Interface and IPs via Python..."
 
 # Python script to generate a MAP for load balancing SNAT
 PYTHON_DISCOVERY_SCRIPT=$(cat <<'EOF'
@@ -119,7 +108,7 @@ echo "GUA Count: $GUA_COUNT"
 echo "GUA IP List: $GUA_IP_LIST"
 echo "GUA Map:   $GUA_MAP"
 
-echo ">>> [Req 6] Conntrack Tuning & [Req 8] Persistence..."
+echo ">>> Conntrack Tuning & Persistence..."
 
 cat <<EOF > /etc/sysctl.d/99-nat66-tuning.conf
 net.netfilter.nf_conntrack_max = 262144
@@ -133,17 +122,19 @@ EOF
 # Apply sysctl settings immediately
 sysctl --system
 
-echo ">>> [Req 12] Enforcing MTU 1500 on Physical Interface..."
-# OCI VNICs are often 9000. For a NAT gateway, setting this to 1500
-# ensures the kernel generates correct PTB messages with MTU 1500.
-ip link set dev "$PRIMARY_IFACE" mtu 1500
+# OCI VNICs have MTU of 9000. For internet traffic MTU is 1500.
+# Internet bound traffic as OCI IGW itself replies with ICMPv6 Too Big messages for packets > 1500 bytes.
+# Hence we dnt need to do any MTU Policing
+# Just ensure your ULA client's VNICs don't block ICMPv6 'Packets to Too Big' messages
+# This also takes care of TCP MSS Clamping to ~1240 bytes
+# and also make sure no issues with fragmentation of packets
 
-echo ">>> [Req 1, 4, 5, 7, 9, 10, 12] Generating NFTables Ruleset..."
+echo ">>> Generating NFTables Ruleset..."
 
 cat <<EOF > /etc/nftables/nat66.nft
 #!/usr/sbin/nft -f
 
-# Clear existing rules for idempotency [Req 8]
+# Clear existing rules for idempotency
 flush ruleset
 
 table inet nat66_gateway {
@@ -176,16 +167,6 @@ table inet nat66_gateway {
     chain forward {
         type filter hook forward priority filter; policy drop;
 
-        # [Req 12] MTU Policing
-        # If a packet is larger than 1500 bytes (standard internet MTU),
-        # reject it with ICMPv6 Packet Too Big (PTB) telling sender to use 1500.
-        # This handles cases where OCI VNIC is 9000 but internet path is 1500.
-        ip6 length > 1500 reject with icmpv6 type 2
-
-        # [Req 7] TCP MSS Clamping
-        # Clamp MSS to 1240 bytes for all forwarded TCP SYN packets.
-        tcp flags syn tcp option maxseg size set 1240
-
         # [Req 9] Accept established/related forwarding
         ct state established,related accept
 
@@ -204,20 +185,28 @@ table inet nat66_gateway {
 
         # [Req 4 & 5] NAT Logic
         # SNAT all traffic from ULA (fc00::/7) going out the primary interface
-        # to the detected GUAs of this nodes, load balanced in sticky manner as per source IP of your ULA clients.
-        # The 'snat' statement uses kernel logic for port exhaustion/rotation.
-        ip6 saddr fc00::/7 oifname "$PRIMARY_IFACE" snat to jhash ip6 saddr mod $GUA_COUNT \
-          map { $GUA_MAP }
+        # to the detected GUAs of this nodes, 
+        # load balanced in sticky manner as per jhash of (Source IP of your ULA clients + Destination GUA IP of Internet).
+        # example for node with primary interface enp0s6 
+        # and 2 GUAs assigned to it (2603:c020:400c:fb01:0:53a5:3798:7101 and 2603:c020:400c:fb01:0:4cef:a823:e101) -
+        # ip6 saddr fc00::/7 oifname "enp0s6" \
+        #   snat ip6 to jhash ip6 saddr . ip6 daddr mod 2 \
+        #     map { 0 : 2603:c020:400c:fb01:0:53a5:3798:7101, 1 : 2603:c020:400c:fb01:0:4cef:a823:e101 }
+
+        ip6 saddr fc00::/7 oifname "$PRIMARY_IFACE" \
+            snat ip6 to jhash ip6 saddr . ip6 daddr mod $GUA_COUNT \
+              map { $GUA_MAP }
+          
     }
 }
 EOF
 
-echo ">>> [Req 8] Applying and Enabling NFTables..."
+echo ">>> Applying and Enabling NFTables..."
 
 # Load the ruleset
 nft -f /etc/nftables/nat66.nft
 
-# --- START: Conditional Backup and Persistence (User Request) ---
+# --- START: Conditional Backup and Persistence of default nftables config ---
 NFT_CONFIG_FILE="/etc/sysconfig/nftables.conf"
 NFT_BACKUP_FILE="${NFT_CONFIG_FILE}.orig.bak"
 
@@ -232,9 +221,9 @@ fi
 # --- END: Conditional Backup and Persistence ---
 
 # Save rules to system default location to ensure survival on reboot
-# (On RHEL/OL9, the service loads from /etc/sysconfig/nftables.conf usually, 
+# (On OL9, the service loads from /etc/sysconfig/nftables.conf usually, 
 # but we can point the service to our file or include it).
-# Best practice for RHEL/OL9:
+# Best practice for OL9:
 echo "include \"/etc/nftables/nat66.nft\"" > "$NFT_CONFIG_FILE"
 
 # Enable and restart service
@@ -250,10 +239,7 @@ echo "NAT Strategy:      jhash load balancing over $GUA_COUNT GUA IPv6s"
 echo "GUA IP List:       $GUA_IP_LIST"
 echo "NAT Pool of GUA IPv6s : $GUA_MAP"
 echo ""
-echo ">>> [Req 11] Verification Commands:"
+echo ">>> Verification Commands:"
 echo "1. View Ruleset:          nft list ruleset"
 echo "2. View Conntrack Table:  conntrack -L -f ipv6"
-echo "3. Test External Access:  curl -6 https://ifconfig.co"
-echo "4. Test Trace (Host):     mtr -6 google.com"
-echo "5. Monitor Counters:      nft list ruleset | grep 'packets'"
 echo "=============================================================================="

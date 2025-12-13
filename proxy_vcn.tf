@@ -144,8 +144,8 @@ resource "oci_core_subnet" "backend_nat66_subnet" {
   vcn_id                     = oci_core_vcn.proxy_vcn.id
   cidr_block                 = var.backend_nat66_subnet_ipv4_cidr
   ipv6cidr_block             = cidrsubnet("${local.proxy_vcn_gua_prefix}", 8, 1) # add 8 to 56 to get /64, then subnet /64 (e.g., 2001:...:0100::/64)
-  display_name               = "proxy-backend_nat666-subnet"
-  prohibit_public_ip_on_vnic = true # no public IPv4 addresses on VNICs
+  display_name               = "proxy-backend_nat66-subnet"
+  prohibit_public_ip_on_vnic = false # no public IPv4 addresses on VNICs
   route_table_id             = oci_core_route_table.backend_nat66_subnet_rt.id
   security_list_ids          = [oci_core_default_security_list.def_security_list_pv.id]
   dns_label                  = "benatsixsixsb"

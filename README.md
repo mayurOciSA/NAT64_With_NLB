@@ -114,6 +114,11 @@ IPv4_ADDR=$(dig +short ams.download.datapacket.com A | tail -1)
 echo $IPv4_ADDR
 curl -6 --resolve ams.download.datapacket.com:443:[64:ff9b::$IPv4_ADDR] https://ams.download.datapacket.com/100mb.bin -o 100mb.bin
 
+
+IPv4_ADDR=$(dig +short ash-speed.hetzner.com A | tail -1)
+echo $IPv4_ADDR
+curl -6 --resolve ash-speed.hetzner.com:443:[64:ff9b::$IPv4_ADDR] https://ash-speed.hetzner.com/10GB.bin -o 10GB.bin
+
 ```
 Or
 ```Shell
