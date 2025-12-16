@@ -22,7 +22,7 @@ The setup connects an ULA-IPv6-only subnet in VCN X (placeholder for your produc
 1) Public IPv4 internet via NAT64 NVAs via OCI NAT Gateway(NATGW) &
 2) Public GUA internet via NAT66 NVAs via OCI Internet Gateway(IGW).
 
-Solution is self-contained in a seperate VCN called Proxy VCN. Proxy VCN has 3 private subnets. One for two NLBs, 2nd for NAT64 backend(s)/NVAs & 3rd for NAT66 backend(s)/NVAs. Each NLB is private, dual-stack, acting in transparent (bump-in-the-wire) mode with IPv6 ULA address. 
+Solution is self-contained in a seperate VCN called Proxy VCN. Proxy VCN has 3 subnets. One private subnet for two NLBs, 2nd private subnet for NAT64 backend(s)/NVAs & 3rd public subnet for NAT66 backend(s)/NVAs. Each NLB is private, dual-stack, acting in transparent (bump-in-the-wire) mode with IPv6 ULA address. 4th subnet is private subnet for OCI Bastion SOCK5 proxy.
 
 The focus of this terraform is on Proxy VCN, NLBs within it and backends performing NAT64/NAT66. Needless to say, there should no overlap of IP addresses in VCN X(your ULA VCNs) and Proxy VCN.
 
@@ -34,6 +34,7 @@ With NLB:  1)When pool of backends is scaled up or down, in flight connections w
 
 ---
 ## Solution Architecture
+Diagram is SVG, so you can open it in any browser and zoom in/out.
 
 <img src="diagrams/NAT64_NAT66.drawio.svg" width='160%' height='150%' alt="NAT64 & NAT66  on OCI" style="border: 2px solid black;"/>
 
