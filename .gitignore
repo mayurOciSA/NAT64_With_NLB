@@ -14,3 +14,4 @@ diagrams/.$NAT64.drawio.bkp
 nat66/1.sh
 scratch/*
 */*.log
+diagrams/.*.bkp
