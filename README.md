@@ -38,7 +38,7 @@ With NLB:  1)When pool of backends is scaled up or down, in flight connections w
 ## Solution Architecture
 Diagram is SVG, so you can open it in any browser and zoom in/out.
 
-<img src="diagrams/NAT64_NAT66.drawio.svg" width='160%' height='150%' alt="NAT64 & NAT66  on OCI" style="border: 2px solid black;"/>
+<img src="diagrams/NAT64_NAT66.drawio.svg" width='160%' height='150%' alt="NAT64 & NAT66  on OCI" style="border: 4px solid black;"/>
 
  **Note**: The diagram above illustrates both custom NAT64 & NAT66 Architecture by using multiple backend NAT64/NAT66 instances, NLBs, &  Ingress Route Table for DRG. NLBs in this setup, only receive traffic outbound to internet from ULA clients in VCN X. No inbound traffic from internet to NLBs. The inbound traffic from internet to respective NAT64/NAT66 NVAs after the reverse NAT64/NAT66 translation is directly routed to VCN X via DRG.
 
