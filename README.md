@@ -240,9 +240,9 @@ Alternatively use HTTP3 with QUIC for UDP testing.
 - Users are expected to adjust the # of backends nodes as per their bandwidth needs. Total bandwidth in Gbps provided by setup is ~(#OCPU of each backend node)*(# backend nodes)
 - Users are expected to adjust the SL/NSG rules, as per security needs. Also if needed harden OL9 installation.
 - The setup chooses latest OL9 version as OS for backends for a given region, if you want hardcoded OS image, please alter the code.
-- For production grade NAT64 setup, further tuning might be required for Tayga, esp timeouts for con-tracking, poolsize of virtual IPv4s used by Tayga, log exports for Tayga etc, contrack table size etc. It is left to users to manage their NAT64 NVAs. 
-- For production grade NAT66 setup, further tuning might be required timeouts for con-tracking, number of GUAs on each NAT66 NVA, log exports for NAT66 etc, contrack table size etc. It is left to users to manage their NAT66 NVAs. 
-- Setup appropriate healthchecks for backends.
+- For production grade NAT64 setup, further tuning might be required: timeouts for con-tracking, poolsize of virtual IPv4s used by Tayga, log exports for Tayga etc, contrack table size etc. Configs need to be persisted to survive reboots. It is left to users to manage their NAT64 NVAs. 
+- For production grade NAT66 setup, further tuning might be required: timeouts for con-tracking, number of GUAs on each NAT66 NVA, log exports for NAT66 etc, contrack table size etc. Configs need to be persisted to survive reboots. It is left to users to manage their NAT66 NVAs. 
+- Setup appropriate healthchecks for backends. 
 - The setup has not been tested for long running connections say for connections running longer than 15 minutes.
 - Installation script for NAT64(Tayga) and for NAT66 is only tested for OL9.
 - Technically, setup of both NAT64 and NAT66 is possible on the same backends. I plan to add that in the future. That will eliminate the need for separate backends/NLBs/subnets for NAT64 and NAT66.
