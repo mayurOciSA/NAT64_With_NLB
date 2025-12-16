@@ -47,11 +47,11 @@ After running this Terraform, you will have:
 - **A VCN with IPv6 and IPv4 address space**
 - **One private subnet (IPv6-only)** for compute resources
 - **A VCN attachment to DRG** for connection to the Proxy VCN
-- **Subnet route table:** All GUA IPv6(`2000::/3`) traffic and NAT64 RFC prefix(`64:ff9b::/96`) traffic is routed to the DRG (towards the Proxy VCN)
+- **Subnet route table:** All GUA IPv6(`2000::/3`) traffic and NAT64 RFC 6052 prefix(`64:ff9b::/96`) traffic is routed to the DRG (towards the Proxy VCN)
 
 ### Dynamic Routing Gateway (DRG)
 - **A Dynamic Routing Gateway (DRG)** for inter-VCN communication
-- **Ingress/Transit Route Table:** Routes all GUA IPv6(`2000::/3`) traffic from VCN X to the NLB fronting NAT66 NVAs and NAT64 RFC prefix(`64:ff9b::/96`) traffic from VCN X to the NLB fronting NAT64 NVAs
+- **Ingress/Transit Route Table:** Routes all GUA IPv6(`2000::/3`) traffic from VCN X to the NLB fronting NAT66 NVAs and NAT64 RFC 6052 prefix(`64:ff9b::/96`) traffic from VCN X to the NLB fronting NAT64 NVAs
 
 ### Proxy VCN
 - **A separate (dual-stack IPv4/IPv6)VCN dedicated to NAT64 and NAT66 proxying**
