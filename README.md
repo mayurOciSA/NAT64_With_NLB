@@ -22,13 +22,15 @@ The setup connects an ULA-IPv6-only subnet in VCN X (placeholder for your produc
 1) Public IPv4 internet via NAT64 NVAs via OCI NAT Gateway(NATGW) &
 2) Public GUA internet via NAT66 NVAs via OCI Internet Gateway(IGW).
 
-Solution is self-contained in a seperate VCN called Proxy VCN. Proxy VCN has 3 subnets. One private subnet for two NLBs, 2nd private subnet for NAT64 backend(s)/NVAs & 3rd public subnet for NAT66 backend(s)/NVAs. Each NLB is private, dual-stack, acting in transparent (bump-in-the-wire) mode with IPv6 ULA address. 4th subnet is private subnet for OCI Bastion SOCK5 proxy.
+Solution is self-contained in a seperate VCN called Proxy VCN. Proxy VCN has 3 subnets. One private subnet for two NLBs, 2nd private subnet for NAT64 backend(s)/NVAs & 3rd public subnet for NAT66 backend(s)/NVAs. Each NLB is private, dual-stack, acting in transparent (bump-in-the-wire) mode with IPv6 ULA address. For both NLBs symmetric hashing is also enabled.
+
+4th subnet is private subnet for OCI Bastion SOCK5 proxy.
 
 The focus of this terraform is on Proxy VCN, NLBs within it and backends performing NAT64/NAT66. Needless to say, there should no overlap of IP addresses in VCN X(your ULA VCNs) and Proxy VCN.
 
 For production grade setup, further tuning might be required for backend NVAs doing NAT64/NAT66 translation. It is left to users to manage their NAT64/NAT66 NVAs as per their production needs. Read section on Limitations/Future Extensions.
 
-Why NLB?
+### Significance of NLBs
 
 With NLB:  1)When pool of backends is scaled up or down, in flight connections will remain sticky 2) You will also get health check for NAT64/NAT66 NVAs. Both these are handled by NLB, when it fronts NAT64 or NAT66 NVAs transparently.
 
@@ -38,7 +40,7 @@ Diagram is SVG, so you can open it in any browser and zoom in/out.
 
 <img src="diagrams/NAT64_NAT66.drawio.svg" width='160%' height='150%' alt="NAT64 & NAT66  on OCI" style="border: 2px solid black;"/>
 
-### Note: The diagram above illustrates both custom NAT64 & NAT66 Architecture by using multiple backend NAT64/NAT66 instances, NLBs, &  Ingress Route Table for DRG.
+ **Note**: The diagram above illustrates both custom NAT64 & NAT66 Architecture by using multiple backend NAT64/NAT66 instances, NLBs, &  Ingress Route Table for DRG. NLBs in this setup, only receive traffic outbound to internet from ULA clients in VCN X. No inbound traffic from internet to NLBs. The inbound traffic from internet to respective NAT64/NAT66 NVAs after the reverse NAT64/NAT66 translation is directly routed to VCN X via DRG.
 
 ## Deployment Output
 
@@ -56,7 +58,7 @@ After running this Terraform, you will have:
 
 ### Proxy VCN
 - **A separate (dual-stack IPv4/IPv6)VCN dedicated to NAT64 and NAT66 proxying**
-- **Private Subnet for Network Load Balancer (NLB)s**(needs only IPv6). For two NLBs acting in transparent (bump-in-the-wire) mode
+- **Private Subnet for Network Load Balancer (NLB)s**(needs only IPv6). For two NLBs acting in transparent (bump-in-the-wire) mode with symmetric hashing enabled.
 - **Private Subnet for NAT64 Backend(s)** (dual-stack IPv4/IPv6), backends run `Tayga` for stateless NAT64 and use Linux kernel(using `iptables`) to add statefulness to NAT64.
 Each backend has exactly one interface/VNIC, which is its primary interface with only one private IPv4 address and one ULA IPv6 address.
 - **Private Subnet for NAT66 Backend(s)** (needs only IPv6), backends use Linux kernel(using `nftables` and `conntrack`) to run stateful NAT66. If backend node has multiple GUA IPv6 addresses, it will hash or load balance the flow depending on source and destination IPv6 addresses of the flow. Each backend has exactly one interface/VNIC, which is its primary interface with only one private IPv4 address and can have one or more configurable number of GUA IPV6 addresses. All GUA IPv6 addresses will be used for NAT66 translation, with hash based load balancing.
