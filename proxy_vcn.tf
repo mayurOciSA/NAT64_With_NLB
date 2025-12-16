@@ -157,7 +157,7 @@ resource "oci_core_route_table" "backend_nat66_subnet_rt" {
   vcn_id         = oci_core_vcn.proxy_vcn.id
   display_name   = "proxy-backend_nat66-rt"
 
-  # IPv4 to Internet Gateway for outbound internet traffic, for package downloads only
+  # IPv4 to Internet Gateway for outbound internet traffic, for package/yum downloads only
   route_rules {
     destination       = "0.0.0.0/0"
     network_entity_id = oci_core_nat_gateway.nat_gw.id

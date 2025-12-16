@@ -102,7 +102,7 @@ resource "terraform_data" "SOCK5_tunnel_start" {
     # without a specific health check script, we rely on the SSH command's 
     # exit code and a short wait time.
 
-    ${local.sock5_ssh_tunnel_command} > /tmp/socks5_tunnel.log 2>&1 &
+    nohup ${local.sock5_ssh_tunnel_command} > /tmp/socks5_tunnel.log 2>&1 &
     
     # Capture the PID of the background process
     TUNNEL_PID=$!

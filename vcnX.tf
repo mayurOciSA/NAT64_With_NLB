@@ -90,6 +90,15 @@ resource "oci_core_default_security_list" "def_security_list_vcnX" {
     source   = var.proxy_vcn_ipv6_cidr
   }
 
+  # ICMPv6 for PMTUD
+  ingress_security_rules {
+    protocol = "58" # ICMPv6, 
+    source   = "::/0"
+    icmp_options {
+      type = 2 # Packet too big
+    }
+  }
+
   #Self
   ingress_security_rules {
     protocol = "all"

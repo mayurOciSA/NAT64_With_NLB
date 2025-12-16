@@ -123,11 +123,15 @@ EOF
 sysctl --system
 
 # OCI VNICs have MTU of 9000. For internet traffic MTU is 1500.
-# Internet bound traffic as OCI IGW itself replies with ICMPv6 Too Big messages for packets > 1500 bytes.
-# Hence we dnt need to do any MTU Policing
-# Just ensure your ULA client's VNICs don't block ICMPv6 'Packets to Too Big' messages
-# This also takes care of TCP MSS Clamping to ~1240 bytes
-# and also make sure no issues with fragmentation of packets
+# For internet bound traffic as OCI IGW itself replies with ICMPv6 Too Big messages for packets > 1500 bytes.
+# But subnet SL for backend NAT66 NVA, does not allow ICMPv6 ingress. You can optionally enable it, as per this TF setup. You can optionally enable it.
+
+# Assuming it is not enabled, we need to set MTU of primary interface to 1500 for MTU policing of internet bound traffic.
+# This ensure PMTUD works for internet bound traffic from ULA clients. As NAT66 NVAs will respond with  ICMPv6 'Packets to Too Big' messages to ULA clients sending bigger packets.
+ip link set dev "$PRIMARY_IFACE" mtu 1500 type ethernet 
+
+# In all cases, ensure ULA client's VNICs don't block ICMPv6 'Packets to Too Big' messages, for internet bound traffic.
+# This ensures PMTUD works for internet bound traffic from ULA clients.
 
 echo ">>> Generating NFTables Ruleset..."
 

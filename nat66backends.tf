@@ -105,7 +105,6 @@ resource "terraform_data" "provision_nat66_backend" {
         fi
         echo "SCP completed for NAT66 $nat66ipv4host"
         
-        exit 0
         mkdir -p ${path.module}/nat66/installation_logs
         ssh ${local.ssh_proxy_options} ${local.ssh_custom_options} \
           opc@$nat66ipv4host \

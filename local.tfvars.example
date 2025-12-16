@@ -39,4 +39,4 @@ bastion_subnet_ipv4_cidr       = "10.1.4.0/24"
 ssh_public_key   = "ssh-rsa AAAAB3NzaC1yc2E..... ssh-key-2024-06-19"
 
 # For script execution on backend nodes and also to provide SSH commands access to backend nodes, via Bastion SOCK5 proxy
-ssh_private_key_local_path = "/Users/mraleras/.ssh/id_rsa"
+ssh_private_key_local_path = "/Users/<username>/.ssh/id_rsa"
