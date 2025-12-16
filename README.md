@@ -35,7 +35,7 @@ With NLB:  1)When pool of backends is scaled up or down, in flight connections w
 ---
 ## Solution Architecture
 
-<img src="diagrams/NAT64_NAT66.drawio.svg" width='120%' height='120%' alt="NAT64 & NAT66  on OCI" style="border: 2px solid black;"/>
+<img src="diagrams/NAT64_NAT66.drawio.svg" width='160%' height='150%' alt="NAT64 & NAT66  on OCI" style="border: 2px solid black;"/>
 
 ### Note: The diagram above illustrates both custom NAT64 & NAT66 Architecture by using multiple backend NAT64/NAT66 instances, NLBs, &  Ingress Route Table for DRG.
 
