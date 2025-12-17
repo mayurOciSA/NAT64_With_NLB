@@ -34,6 +34,10 @@ For production grade setup, further tuning might be required for backend NVAs do
 
 With NLB:  1)When pool of backends is scaled up or down, in flight connections will remain sticky 2) You will also get health check for NAT64/NAT66 NVAs. Both these are handled by NLB, when it fronts NAT64 or NAT66 NVAs transparently.
 
+### Special Note on NAT66
+Please note that NAT66 here is stateful SNAT66 where multiple 5 tuple network flows from multiple X number of ULA addresses get mapped to few Y number of GUA IPv6 addresses, where X >> Y. 
+So it is *not* NPT66, where IPv6‑to‑IPv6 network prefix translation is done statelessly, as per RFC 6296.
+ 
 ---
 ## Solution Architecture
 Diagram is SVG, so you can open it in any browser and zoom in/out.
